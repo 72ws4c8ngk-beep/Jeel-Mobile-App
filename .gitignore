@@ -1,0 +1,26 @@
+# IDE and local machine settings
+.idea/
+*.iml
+local.properties
+
+# Generated files
+.gradle/
+.kotlin/
+**/build/
+.externalNativeBuild/
+.cxx/
+*.log
+*.hprof
+.DS_Store
+Thumbs.db
+
+# Build packages and private credentials
+*.apk
+*.aab
+*.jks
+*.keystore
+keystore.properties
+key.properties
+.env
+.env.*
+!.env.example
