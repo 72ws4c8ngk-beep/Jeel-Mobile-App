@@ -46,7 +46,7 @@ import edu.iau.cshj.csc402.myapplication.ui.theme.*
     }
 }
 @Composable internal fun Title(value: String) {
-    Text(value, color = Navy, fontSize = 26.sp, lineHeight = 32.sp, modifier = Modifier.padding(bottom = 14.dp))
+    Text(value, color = Navy, fontSize = 30.sp, lineHeight = 42.sp, modifier = Modifier.padding(bottom = 14.dp))
 }
 @Composable internal fun Body(value: String) {
     Text(value, color = Slate, fontSize = 15.sp, lineHeight = 22.sp)
@@ -55,16 +55,24 @@ import edu.iau.cshj.csc402.myapplication.ui.theme.*
     Text(value, Modifier.fillMaxWidth().padding(top = 24.dp), color = Slate, fontSize = 12.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 }
 @Composable internal fun Action(label: String, secondary: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
-    Button(onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(12.dp), border = if(secondary) androidx.compose.foundation.BorderStroke(1.dp, Edge) else null, colors = ButtonDefaults.buttonColors(containerColor = if(secondary) Color.White else Navy, contentColor = if(secondary) Navy else Color.White)) {
-        Text(label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+    val scene=LocalUiScene.current
+    val busy=!secondary&&(scene.state in listOf("Saving","Sending","Processing")||scene.state=="Loading"&&scene.screen in listOf(3,4,6))
+    val noSlot=scene.state=="No slot selected"&&label.startsWith("Confirm")
+    Button(onClick, enabled = enabled&&!busy&&!noSlot, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(12.dp), border = if(secondary) androidx.compose.foundation.BorderStroke(1.dp, Edge) else null, colors = ButtonDefaults.buttonColors(containerColor = if(secondary) Color.White else Navy, contentColor = if(secondary) Navy else Color.White)) {
+        if(busy) {
+            CircularProgressIndicator(Modifier.size(18.dp),strokeWidth=2.dp,color=Navy)
+            Spacer(Modifier.width(10.dp))
+        }
+        Text(if(busy) when(scene.state) { "Saving"->"Saving…"; "Sending"->"Sending…"; "Processing"->"Processing…"; else->"Loading…" } else label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 @Composable internal fun Field(label: String, value: String, change: (String) -> Unit, secret: Boolean = false, emailField: Boolean = false) {
     var visible by rememberSaveable {
         mutableStateOf(false)
     }
+    val error=inputError(label)
     Text(label, color = Slate, fontSize = 13.sp, modifier = Modifier.padding(bottom = 8.dp))
-    OutlinedTextField(value, change, modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp), singleLine = true, shape = RoundedCornerShape(12.dp), visualTransformation = if(secret && !visible) PasswordVisualTransformation() else VisualTransformation.None, keyboardOptions = KeyboardOptions(keyboardType = if(secret) KeyboardType.Password else if(emailField) KeyboardType.Email else KeyboardType.Text), trailingIcon = if(secret) {
+    OutlinedTextField(inputDisplayValue(label,value), change, isError=error!=null, supportingText=if(error!=null) { { Text(error) } } else null, modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp), singleLine = true, shape = RoundedCornerShape(12.dp), visualTransformation = if(secret && !visible && LocalUiScene.current.state!="Password visible") PasswordVisualTransformation() else VisualTransformation.None, keyboardOptions = KeyboardOptions(keyboardType = if(secret) KeyboardType.Password else if(emailField) KeyboardType.Email else KeyboardType.Text), trailingIcon = if(secret) {
         {
             TextButton(onClick = {
                 visible = !visible

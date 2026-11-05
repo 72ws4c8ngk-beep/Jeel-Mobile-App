@@ -14,7 +14,7 @@ import edu.iau.cshj.csc402.myapplication.state.*
 internal fun ColumnScope.ExploreScreen(state:JeelUiState) {
     with(state){
         PageHead("EXPLORE","Find your mentor")
-        Info("Suggested matches","These mentors match your challenge, goals, and interests.")
+        Info("Suggested matches","Discover experience that matches your goals and interests.")
         SearchBox(query){
             query=it
         }
@@ -35,7 +35,7 @@ internal fun ColumnScope.ExploreScreen(state:JeelUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun ExploreScreenPreview() {
     JeelWorkspace("Mentee","","",initialRoute="explore"){}

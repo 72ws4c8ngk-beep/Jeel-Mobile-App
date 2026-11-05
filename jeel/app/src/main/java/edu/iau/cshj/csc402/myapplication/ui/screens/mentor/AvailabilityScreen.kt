@@ -53,8 +53,7 @@ internal fun ColumnScope.AvailabilityScreen(state:JeelUiState) {
                         }){
                             Text("Edit")
                         }
-                        TextButton(onClick={
-                        }){
+                        TextButton(onClick={ confirmation="delete" }){
                             Text("Delete",color=Color(0xFFB36A60))
                         }
                     }
@@ -72,7 +71,7 @@ internal fun ColumnScope.AvailabilityScreen(state:JeelUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun AvailabilityScreenPreview() {
     JeelWorkspace("Mentor","","",initialRoute="availability"){}

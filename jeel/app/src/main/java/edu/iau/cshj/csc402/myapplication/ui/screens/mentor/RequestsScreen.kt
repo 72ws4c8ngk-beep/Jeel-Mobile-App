@@ -16,7 +16,7 @@ internal fun ColumnScope.RequestsScreen(state:JeelUiState) {
     with(state){
         PageHead("MENTORSHIP REQUESTS","Someone's next step")
         BodyText("Take a moment to see where your experience can help.")
-        Segments(listOf("Pending","Accepted","Declined"),requestTab){
+        Segments(listOf("Pending","Accepted","Rejected"),requestTab){
             requestTab=it
         }
         Heading(if(requestTab=="Pending")"Awaiting your response" else "$requestTab requests",18)
@@ -43,7 +43,7 @@ internal fun ColumnScope.RequestsScreen(state:JeelUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun RequestsScreenPreview() {
     JeelWorkspace("Mentor","","",initialRoute="requests"){}

@@ -12,10 +12,11 @@ import edu.iau.cshj.csc402.myapplication.state.*
 @Composable
 internal fun ColumnScope.BookingScreen(state:JeelUiState) {
     with(state){
-        PageHead("BOOK A SESSION","Make time for growth",::back)
+        PageHead(if(rescheduling) "RESCHEDULE YOUR SESSION" else "BOOK A SESSION",if(rescheduling) "Choose a new time" else "Make time for growth",::back)
+        if(rescheduling) Info("Current appointment",sessionDate+" · "+sessionTime+" · 45 min on Zoom")
         Panel{
             Person(selectedMentor.name,selectedMentor.job,selectedMentor.image)
-            Caption("45 min online mentorship · English")
+            Caption("45 min on Zoom · English")
         }
         Heading("Choose a date",18)
         CalendarCard(year,month,date,{
@@ -38,13 +39,13 @@ internal fun ColumnScope.BookingScreen(state:JeelUiState) {
         }
         Info("Your request, thoughtfully considered","Your mentor will review your request. You'll be notified when they accept.")
         Info("Your selection","$date ${monthName(month)} $year · $time · 45 min\n$bookingTopic with ${selectedMentor.name}")
-        Action("Confirm booking"){
+        Action(if(rescheduling) "Confirm reschedule" else "Confirm booking"){
             go("confirmation")
         }
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun BookingScreenPreview() {
     JeelWorkspace("Mentee","","",initialRoute="book"){}

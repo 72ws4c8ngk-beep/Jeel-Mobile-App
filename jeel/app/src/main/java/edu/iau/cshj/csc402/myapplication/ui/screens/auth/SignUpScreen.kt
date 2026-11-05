@@ -17,10 +17,14 @@ import edu.iau.cshj.csc402.myapplication.state.*
 @Composable
 internal fun ColumnScope.SignUpScreen(state:AuthUiState) {
     with(state){
-        Header("A NEW CHAPTER", "Create your account", ::back)
+        Header("STEP 1 OF 2 · CHOOSE YOUR ROLE", "Create your account", ::back)
         Title("Start with a connection.")
         Body("A few details to make your mentorship journey personal.")
         Spacer(Modifier.height(20.dp))
+        RoleCard("Mentee", "Find guidance from someone who has been there. Explore your interests and take your next career step.", role=="Mentee") { role="Mentee" }
+        Spacer(Modifier.height(20.dp))
+        RoleCard("Mentor", "Share your professional experience. Guide the next generation with practical advice that makes a difference.", role=="Mentor") { role="Mentor" }
+        Spacer(Modifier.height(22.dp))
         Field("Full name", fullName, {
             fullName = it
         })
@@ -51,8 +55,8 @@ internal fun ColumnScope.SignUpScreen(state:AuthUiState) {
             Text("I agree to the Terms of service and Privacy policy.", fontSize = 12.sp, color = Slate)
         }
         Spacer(Modifier.height(12.dp))
-        Action("Create account", enabled = true) {
-            go("role")
+        Action("Create account as $role", enabled = true) {
+            go("profile")
         }
         TextButton(onClick = {
             go("login")
@@ -62,7 +66,7 @@ internal fun ColumnScope.SignUpScreen(state:AuthUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun SignUpScreenPreview() {
     PreviewScreen { SignUpScreen(AuthUiState()) }

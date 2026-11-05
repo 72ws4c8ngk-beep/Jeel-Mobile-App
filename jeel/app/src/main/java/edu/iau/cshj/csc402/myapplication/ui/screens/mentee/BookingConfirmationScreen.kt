@@ -26,14 +26,14 @@ internal fun ColumnScope.BookingConfirmationScreen(state:JeelUiState) {
         Box(Modifier.align(Alignment.CenterHorizontally).size(76.dp).clip(CircleShape).background(Color(0xFFE5F1ED)),contentAlignment=Alignment.Center){
             Text("✓",color=Green,fontSize=35.sp)
         }
-        Heading("Your request is on its way.",25)
-        BodyText("You've made time for your future. Your mentor will confirm your session soon.")
+        Heading(if(rescheduling) "Your session has been rescheduled." else if(bookingPending) "Waiting for mentor approval" else "Your session is booked.",25)
+        BodyText(if(bookingPending) "Your request was sent. You will be notified when the mentor responds." else "Your mentorship session is confirmed. We look forward to seeing you on Zoom.")
         Panel{
             Person(selectedMentor.name,selectedMentor.job,selectedMentor.image)
-            Badge("Pending")
+            Badge(if(bookingPending) "Pending" else if(rescheduling) "Rescheduled" else "Confirmed")
             SessionDetails(sessionDate,sessionTime,currentSession)
         }
-        Caption("Preview only — no booking or email has been sent.")
+        Caption("Your Zoom link will be available in Session Details before the session.")
         Action("View my sessions"){
             sessionTab="Upcoming"
             tab("sessions")
@@ -44,7 +44,7 @@ internal fun ColumnScope.BookingConfirmationScreen(state:JeelUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun BookingConfirmationScreenPreview() {
     JeelWorkspace("Mentee","","",initialRoute="confirmation"){}

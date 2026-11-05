@@ -51,7 +51,7 @@ internal fun ColumnScope.MenteeSessionsScreen(state:JeelUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun MenteeSessionsScreenPreview() {
     JeelWorkspace("Mentee","","",initialRoute="sessions"){}

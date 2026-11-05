@@ -21,8 +21,37 @@ import edu.iau.cshj.csc402.myapplication.ui.screens.shared.*
 
 @Composable
 fun JeelWorkspace(initialRole:String,initialName:String,initialEmail:String,initialRoute:String="home",initialProfile:Map<String,String> = emptyMap(),logout:()->Unit) {
-    val state=remember{
-        JeelUiState(initialRole,initialName,initialEmail,initialRoute,initialProfile)
+    val scene=LocalUiScene.current
+    val state=remember(initialRole,initialRoute,scene){
+        JeelUiState(initialRole,initialName,initialEmail,initialRoute,initialProfile).apply {
+            when(scene.state) {
+                "Completed tab" -> sessionTab="Completed"
+                "Cancelled tab" -> { sessionTab="Cancelled"; cancelled=true }
+                "Accepted tab" -> { requestTab="Accepted"; requestStates=listOf("Accepted","Accepted") }
+                "Rejected tab" -> { requestTab="Rejected"; requestStates=listOf("Rejected","Rejected") }
+                "Accepted" -> requestStates=listOf("Accepted","Pending")
+                "Rejected" -> requestStates=listOf("Rejected","Pending")
+                "Rating selected" -> rating=5
+                "Read" -> allRead=true
+                "Arabic selected" -> language="العربية"
+                "Notifications off" -> { reminders=false; updates=false }
+                "Reschedule","Reschedule confirmed" -> rescheduling=true
+                "Awaiting approval" -> bookingPending=true
+                "No slot selected" -> { date=0; time="" }
+                "Search results" -> query="Product strategy"
+                "No filters","Reset" -> { filterArea="All expertise"; filterSkills="Any"; filterAvailability="Any time" }
+                "Add slot","Edit slot","Invalid time","Overlapping slots" -> {
+                    slotDialog=true; editSlot=if(scene.state=="Edit slot") 0 else -1
+                    slotText=if(scene.state=="Invalid time") "11:45 AM" else "11:00 AM"
+                }
+                "Confirm cancellation" -> confirmation="cancel"
+                "Confirm acceptance" -> confirmation="accept"
+                "Confirm rejection" -> confirmation="reject"
+                "Confirm deletion" -> confirmation="delete"
+                "Confirm logout" -> confirmation="logout"
+                "Discard changes" -> confirmation="discard"
+            }
+        }
     }
     with(state){
         BackHandler{
@@ -45,30 +74,27 @@ fun JeelWorkspace(initialRole:String,initialName:String,initialEmail:String,init
             }){
                 padding->
                 key(route){
-                    Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(horizontal=20.dp,vertical=16.dp),verticalArrangement=Arrangement.spacedBy(18.dp)){
+                    Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(horizontal=24.dp,vertical=16.dp),verticalArrangement=Arrangement.spacedBy(22.dp)){
+                        UiStatePresentation {
                         when(route){
                             "home" -> if(isMentor) MentorHomeScreen(state) else MenteeHomeScreen(state)
                             "explore" -> ExploreScreen(state)
                             "filters" -> FilterScreen(state)
                             "mentor" -> MentorDetailScreen(state)
-                            "reviews" -> MentorReviewsScreen(state)
-                            "match" -> FindMatchScreen(state)
-                            "book","reschedule" -> if(rescheduling) RescheduleScreen(state) else BookingScreen(state)
+                            "book" -> BookingScreen(state)
                             "confirmation" -> BookingConfirmationScreen(state)
                             "sessions" -> if(isMentor) MentorSessionsScreen(state) else MenteeSessionsScreen(state)
-                            "session" -> if(isMentor) MentorSessionDetailScreen(state) else MenteeSessionDetailScreen(state)
+                            "session" -> SessionDetailsScreen(state)
                             "review" -> SessionReviewScreen(state)
                             "requests" -> RequestsScreen(state)
                             "request" -> RequestDetailScreen(state)
                             "availability" -> AvailabilityScreen(state)
                             "progress" -> ProgressScreen(state)
-                            "profile" -> if(isMentor) MentorProfileScreen(state) else MenteeProfileScreen(state)
+                            "profile" -> MyProfileScreen(state)
                             "editProfile" -> if(isMentor) MentorEditProfileScreen(state) else MenteeEditProfileScreen(state)
-                            "notifications" -> if(isMentor) MentorNotificationsScreen(state) else MenteeNotificationsScreen(state)
+                            "notifications" -> NotificationsScreen(state)
                             "settings" -> SettingsScreen(state)
-                            "language" -> LanguageScreen(state)
-                            "notificationSettings" -> NotificationSettingsScreen(state)
-                            "privacy" -> PrivacyScreen(state)
+                        }
                         }
                         Spacer(Modifier.height(12.dp))
                     }
@@ -80,26 +106,48 @@ fun JeelWorkspace(initialRole:String,initialName:String,initialEmail:String,init
                 Text(when(confirmation){
                     "logout"->"Log out of Jeel?"
                     "cancel"->"Cancel this session?"
-                    else->"Decline this request?"
+                    "accept"->"Accept this request?"
+                    "reject"->"Reject this request?"
+                    "delete"->"Delete this time slot?"
+                    "discard"->"Discard your changes?"
+                    else->"Confirm this action?"
                 })
             },text={
-                Text("Design preview only.")
+                Text(when(confirmation) {
+                    "logout" -> "You can log in again at any time to continue your mentorship journey."
+                    "cancel" -> "Both participants will be notified. This appointment will leave your upcoming sessions."
+                    "accept" -> "An upcoming Zoom session will be created for this mentorship."
+                    "reject" -> "The mentee will be notified of your decision."
+                    "delete" -> "Mentees will no longer be able to book this available time. Existing bookings stay unchanged."
+                    "discard" -> "Your unsaved edits will be lost. Your saved profile will stay as it was."
+                    else -> "Review the details before continuing."
+                })
             },confirmButton={
                 TextButton(onClick={
                     when(confirmation){
                         "logout" -> logout()
                         "cancel" -> tab("sessions")
-                        "decline" -> tab("requests")
+                        "reject" -> tab("requests")
+                        "accept" -> tab("sessions")
+                        "discard" -> back()
                     }
                     confirmation=""
                 }){
-                    Text("Confirm")
+                    Text(when(confirmation) {
+                        "logout" -> "Log out"
+                        "cancel" -> "Cancel session"
+                        "accept" -> "Accept request"
+                        "reject" -> "Reject request"
+                        "delete" -> "Delete slot"
+                        "discard" -> "Discard changes"
+                        else -> "Confirm"
+                    })
                 }
             },dismissButton={
                 TextButton(onClick={
                     confirmation=""
                 }){
-                    Text("Keep")
+                    Text(if(confirmation=="discard") "Keep editing" else "Go back")
                 }
             })
             if(slotDialog)AlertDialog(onDismissRequest={
@@ -107,8 +155,13 @@ fun JeelWorkspace(initialRole:String,initialName:String,initialEmail:String,init
             },title={
                 Text(if(editSlot<0)"Add time slot" else "Edit time slot")
             },text={
-                EditBox("Start time",slotText){
-                    slotText=it
+                Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                    Picker("Day",selectedDay,listOf("Mon","Tue","Wed","Thu","Fri","Sat","Sun")) { selectedDay=it }
+                    EditBox("Start time",slotText) { slotText=it }
+                    EditBox("End time",if(scene.state=="Invalid time") "11:00 AM" else "11:45 AM") { }
+                    Caption("Arabia Standard Time (UTC+3)")
+                    if(scene.state=="Invalid time") Info("Invalid time","End time must be after start time.")
+                    if(scene.state=="Overlapping slots") Info("Overlapping slots","This time overlaps 11:00–11:45 AM. Choose another slot.")
                 }
             },confirmButton={
                 TextButton(onClick={

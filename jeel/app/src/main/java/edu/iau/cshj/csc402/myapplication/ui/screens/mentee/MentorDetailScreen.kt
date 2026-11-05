@@ -24,7 +24,7 @@ internal fun ColumnScope.MentorDetailScreen(state:JeelUiState) {
         ProfileHero(selectedMentor.name,selectedMentor.job,selectedMentor.image,"Verified mentor")
         Chips(listOf(selectedMentor.area,"${selectedMentor.years} years of experience"),""){
         }
-        Stats(listOf(selectedMentor.rating to "64 reviews","112" to "Sessions guided",selectedMentor.years.toString() to "Years of experience"))
+        Stats(listOf((if(LocalUiScene.current.state=="No reviews") "—" else selectedMentor.rating) to (if(LocalUiScene.current.state=="No reviews") "No reviews yet" else "64 reviews"),"112" to "Sessions guided",selectedMentor.years.toString() to "Years of experience"))
         Heading("About ${selectedMentor.name.removePrefix("Dr. ").substringBefore(' ')}",18)
         BodyText(if(mentorIndex==0)Bio else "I help emerging professionals build confidence, explore their strengths, and turn their ambitions into a practical career plan.")
         BodyText("Expect honest conversations, practical frameworks, and a clear next step after every session.")
@@ -36,24 +36,22 @@ internal fun ColumnScope.MentorDetailScreen(state:JeelUiState) {
             Detail("◎","Career direction","From your current interests to your next career step")
             Detail("▣","Professional growth","CV reviews, interviews and leadership")
         }
-        Section("What mentees say","All 64 reviews"){
-            go("reviews")
-        }
-        ReviewCard()
+        Heading("What mentees say · 64 reviews",18)
+        if(LocalUiScene.current.state=="No reviews") Info("No reviews yet","Be the first to share your experience after a session.") else ReviewCard()
         Heading("Available dates",18)
-        Chips(listOf("Sun, 18 Oct","Sun, 25 Oct","Sun, 1 Nov"),""){
+        if(LocalUiScene.current.state!="No availability") Chips(listOf("Sun, 18 Oct","Sun, 25 Oct","Sun, 1 Nov"),""){
             date=if(it.contains("25"))25 else if(it.contains("1 Nov"))1 else 18
             month=if(it.contains("Nov"))11 else 10
         }
-        Caption("45 min online sessions · English · Arabia Standard Time (UTC+3)")
-        Action(if(selectedMentor.available)"Book session" else "No available slots",enabled=selectedMentor.available){
+        Caption("45 min Zoom sessions · English · Arabia Standard Time (UTC+3)")
+        Action(if(selectedMentor.available&&LocalUiScene.current.state!="No availability")"Book session" else "No available slots",enabled=selectedMentor.available&&LocalUiScene.current.state!="No availability"){
             rescheduling=false
             go("book")
         }
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun MentorDetailScreenPreview() {
     JeelWorkspace("Mentee","","",initialRoute="mentor"){}

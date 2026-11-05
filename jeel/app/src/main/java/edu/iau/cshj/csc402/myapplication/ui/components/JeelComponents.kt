@@ -95,7 +95,7 @@ import java.util.Calendar
     val c=when(value){
         "Pending"->Warm
         "Completed","Verified mentor"->Color(0xFFE5F1ED)
-        "Cancelled","Declined"->Rose
+        "Cancelled","Rejected"->Rose
         else->Mist
     }
     Text("• $value",color=when(c){
@@ -209,9 +209,10 @@ import java.util.Calendar
     },shape=RoundedCornerShape(12.dp),colors=OutlinedTextFieldDefaults.colors(unfocusedContainerColor=Color.White,focusedContainerColor=Color.White,unfocusedBorderColor=Edge))
 }
 @Composable internal fun EditBox(label:String,value:String,lines:Int=1,change:(String)->Unit){
+    val error=inputError(label)
     Column(verticalArrangement=Arrangement.spacedBy(6.dp)){
         Caption(label)
-        OutlinedTextField(value,change,modifier=Modifier.fillMaxWidth(),singleLine=lines==1,minLines=lines,shape=RoundedCornerShape(10.dp),textStyle=LocalTextStyle.current.copy(fontSize=14.sp,color=Navy),colors=OutlinedTextFieldDefaults.colors(unfocusedContainerColor=Color.White,focusedContainerColor=Color.White,unfocusedBorderColor=Edge))
+        OutlinedTextField(inputDisplayValue(label,value),change,isError=error!=null,supportingText=if(error!=null) { { Text(error) } } else null,modifier=Modifier.fillMaxWidth(),singleLine=lines==1,minLines=lines,shape=RoundedCornerShape(10.dp),textStyle=LocalTextStyle.current.copy(fontSize=14.sp,color=Navy),colors=OutlinedTextFieldDefaults.colors(unfocusedContainerColor=Color.White,focusedContainerColor=Color.White,unfocusedBorderColor=Edge))
     }
 }
 @Composable internal fun Picker(label:String,value:String,options:List<String>,choose:(String)->Unit){
@@ -287,13 +288,14 @@ internal fun monthName(month:Int)=listOf("Jan","Feb","Mar","Apr","May","Jun","Ju
     }
 }
 @Composable internal fun ProgressCard(title:String,value:Float,subtitle:String){
+    val shown=if(LocalUiScene.current.state=="Goal complete") 1f else value
     Panel{
         Row{
             Text(title,color=Navy,fontSize=13.sp,modifier=Modifier.weight(1f))
-            Caption("${(value*100).toInt()}%")
+            Caption("${(shown*100).toInt()}%")
         }
         LinearProgressIndicator(progress={
-            value
+            shown
         },modifier=Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),color=Navy,trackColor=Mist)
         Caption(subtitle)
     }

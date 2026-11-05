@@ -37,23 +37,23 @@ fun JeelApp() {
             when(screen){
                 "splash" -> SplashScreen()
                 "profile" -> JeelOnboarding(role,fullName,{
-                    go("role")
+                    go("signup")
                 },{
                     go("workspace")
                 })
-                "workspace" -> JeelWorkspace(role,"",""){
+                "workspace" -> JeelWorkspace(role,fullName,email){
                     go("welcome")
                 }
                 else -> Surface(color=Cream,modifier=Modifier.fillMaxSize()) {
                     key(screen){
-                        Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
+                        Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding().verticalScroll(rememberScrollState()).padding(24.dp)) {
+                            UiStatePresentation {
                             when(screen){
                                 "welcome" -> WelcomeScreen(state)
                                 "login" -> LoginScreen(state)
                                 "signup" -> SignUpScreen(state)
-                                "role" -> RoleSelectionScreen(state)
                                 "reset" -> ForgotPasswordScreen(state)
-                                "sent" -> CheckEmailScreen(state)
+                            }
                             }
                             Spacer(Modifier.height(16.dp))
                         }

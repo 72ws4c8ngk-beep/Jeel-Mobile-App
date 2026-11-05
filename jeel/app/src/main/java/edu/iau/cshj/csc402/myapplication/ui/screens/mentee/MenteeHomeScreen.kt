@@ -35,16 +35,13 @@ internal fun ColumnScope.MenteeHomeScreen(state:JeelUiState) {
         }
         Panel(Navy){
             Text("BUILT ON REAL EXPERIENCE",fontSize=10.sp,color=Color.White.copy(alpha=.7f))
-            Text("You don't have to figure it all out alone.",fontFamily=FontFamily.Serif,color=Color.White,fontSize=25.sp,lineHeight=30.sp)
+            Text("You don't have to figure it all out alone.",fontFamily=JeelSerif,color=Color.White,fontSize=25.sp,lineHeight=30.sp)
             Text("Meet mentors who understand your ambition.",color=Color.White.copy(alpha=.7f),fontSize=12.sp)
         }
         Panel{
-            Section("Ask Jeel","• New"){
-            }
-            BodyText("Tell us what you're facing and Jeel will help you find the right mentor.")
-            Action("Find my match"){
-                go("match")
-            }
+            Heading("Find your next mentor",18)
+            BodyText("Explore professionals whose experience fits your interests and goals.")
+            Action("Explore mentors") { tab("explore") }
         }
         Section("Recommended for you","See all"){
             tab("explore")
@@ -68,6 +65,8 @@ internal fun ColumnScope.MenteeHomeScreen(state:JeelUiState) {
             mentorIndex=0
             session(mentors[0].name,"Career roadmap")
         }
+        Heading("Your progress",18)
+        ProgressCard("Your mentorship goal",.6f,"3 sessions completed · Keep taking the next step")
         Heading("Inspired by your interests",18)
         MentorCard(mentors[1]){
             openMentor(1)
@@ -76,7 +75,7 @@ internal fun ColumnScope.MenteeHomeScreen(state:JeelUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun MenteeHomeScreenPreview() {
     JeelWorkspace("Mentee","","",initialRoute="home"){}

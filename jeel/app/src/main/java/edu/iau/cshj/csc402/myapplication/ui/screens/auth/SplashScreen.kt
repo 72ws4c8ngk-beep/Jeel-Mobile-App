@@ -113,7 +113,7 @@ internal fun SplashScreen(){
             text = "Experience shared.\nPotential unlocked.",
             color = Color.White,
             fontSize = 32.sp,
-            fontFamily = FontFamily.Serif,
+            fontFamily = JeelSerif,
             fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center,
             lineHeight = 42.sp

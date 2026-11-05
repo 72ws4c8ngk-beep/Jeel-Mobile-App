@@ -37,8 +37,8 @@ internal fun ColumnScope.MentorHomeScreen(state:JeelUiState) {
         }
         Panel(Navy){
             Text("YOUR EXPERIENCE. THEIR POSSIBILITY.",fontSize=10.sp,color=Color.White.copy(alpha=.7f))
-            Text("A lifetime of learning.\nA new generation of growth.",fontFamily=FontFamily.Serif,color=Color.White,fontSize=25.sp,lineHeight=30.sp)
-            
+            Text("A lifetime of learning.\nA new generation of growth.",fontFamily=JeelSerif,color=Color.White,fontSize=25.sp,lineHeight=30.sp)
+
         }
         Stats(listOf("112" to "Sessions guided","4.9" to "Avg. rating",requestStates.count{
             it=="Pending"
@@ -62,7 +62,7 @@ internal fun ColumnScope.MentorHomeScreen(state:JeelUiState) {
                 requestPerson="Aisha Rahman"
                 go("request")
             }
-        } else Info("You're all caught up","View your Requests tab to review accepted and declined requests.")
+        } else Info("You're all caught up","View your Requests tab to review accepted and rejected requests.")
         Heading("Quick actions",18)
         Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
             Box(Modifier.weight(1f)){
@@ -79,7 +79,7 @@ internal fun ColumnScope.MentorHomeScreen(state:JeelUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun MentorHomeScreenPreview() {
     JeelWorkspace("Mentor","","",initialRoute="home"){}

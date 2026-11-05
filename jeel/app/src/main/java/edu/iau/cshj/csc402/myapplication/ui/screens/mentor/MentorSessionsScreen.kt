@@ -44,11 +44,11 @@ internal fun ColumnScope.MentorSessionsScreen(state:JeelUiState) {
             }
         }
         Caption("Join details appear in your session 15 minutes before the start.")
-        
+
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun MentorSessionsScreenPreview() {
     JeelWorkspace("Mentor","","",initialRoute="sessions"){}

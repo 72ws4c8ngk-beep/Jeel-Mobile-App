@@ -22,9 +22,9 @@ internal fun ColumnScope.FilterScreen(state:JeelUiState) {
         Picker("Industry",filterIndustry,listOf("All industries","Technology & digital products","Healthcare","Education")){
             filterIndustry=it
         }
-        Heading("Years of experience",18)
-        Chips(listOf("Any","5–10 years","10–20 years","20+ years"),filterYears){
-            filterYears=it
+        Heading("Skills",18)
+        Chips(listOf("Any","Roadmapping","Communication","Leadership"),filterSkills){
+            filterSkills=it
         }
         Heading("Availability",18)
         Chips(listOf("Any time","This week","Next week","Weekends"),filterAvailability){
@@ -40,7 +40,7 @@ internal fun ColumnScope.FilterScreen(state:JeelUiState) {
         }
         Action("Reset filters",secondary=true){
             filterArea="All expertise"
-            filterYears="Any"
+            filterSkills="Any"
             filterAvailability="Any time"
             filterRating="Any"
             filterIndustry="All industries"
@@ -49,7 +49,7 @@ internal fun ColumnScope.FilterScreen(state:JeelUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun FilterScreenPreview() {
     JeelWorkspace("Mentee","","",initialRoute="filters"){}

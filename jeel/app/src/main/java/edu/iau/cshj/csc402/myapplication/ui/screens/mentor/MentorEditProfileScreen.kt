@@ -36,6 +36,7 @@ internal fun ColumnScope.MentorEditProfileScreen(state:JeelUiState) {
             }
         }
         Heading("Personal information",18)
+        EditBox("Age",age) { age=it }
         EditBox("Full name",name){
             name=it
         }
@@ -71,13 +72,13 @@ internal fun ColumnScope.MentorEditProfileScreen(state:JeelUiState) {
         Action("Save changes"){
             state.back()
         }
-        Action("Cancel",secondary=true){
-            state.back()
+        Action("Discard changes",secondary=true){
+            state.confirmation="discard"
         }
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun MentorEditProfileScreenPreview() {
     JeelWorkspace("Mentor","","",initialRoute="editProfile"){}

@@ -9,8 +9,8 @@ The UI design follows a clean and consistent visual style based on the Figma des
 
 | Color | Hex Code | Usage |
 |---|---|---|
-| Navy Blue | `#1B364B` | Headings, primary buttons, and navigation elements |
-| Cream | `#F8F7F3` | Main screen backgrounds |
+| Navy Blue | `#18354A` | Headings, primary buttons, and navigation elements |
+| Cream | `#F8F6F2` | Main screen backgrounds |
 | Gold | `#A17B58` | Accent elements and highlights |
 | Slate | `#52636B` | Secondary text |
 | Mist | `#E9EFF2` | Light background elements |
@@ -20,7 +20,7 @@ The UI design follows a clean and consistent visual style based on the Figma des
 | Warm Beige | `#F2E5D8` | Cards and supporting backgrounds |
 
 ## 3. Typography
-- Use consistent typography across all application screens.
+- Use the bundled Inter family for UI text and Lora for editorial headings.
 - Apply clear font hierarchy for headings, subtitles, and body text.
 - Maintain readable text sizes and appropriate spacing.
 - Use Material 3 typography conventions.
@@ -49,7 +49,7 @@ The design includes relevant interface states such as:
 ## 7. Design References
 The original interface designs are available in Figma:
 
-https://www.figma.com/design/D3nthG9wGqgzhvnZtKzvyf/Untitled?node-id=18-4241
+https://www.figma.com/design/q7yH1BK0m47IHYbqiH6w3d/JEEL?node-id=3-233
 
 Screen reference images are stored in `docs/wireframes/`.
 

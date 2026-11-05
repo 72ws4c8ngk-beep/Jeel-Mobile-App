@@ -15,7 +15,7 @@ internal fun PreviewScreen(content: @Composable ColumnScope.() -> Unit) {
     JeelTheme {
         Surface(color = Cream) {
             Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                 content = content
             )
         }

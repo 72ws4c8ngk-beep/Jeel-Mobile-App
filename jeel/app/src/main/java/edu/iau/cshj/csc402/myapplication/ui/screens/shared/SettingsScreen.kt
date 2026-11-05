@@ -1,51 +1,43 @@
 package edu.iau.cshj.csc402.myapplication.ui.screens.shared
-
-import androidx.compose.ui.tooling.preview.Preview
-import edu.iau.cshj.csc402.myapplication.navigation.JeelWorkspace
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import edu.iau.cshj.csc402.myapplication.R
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import edu.iau.cshj.csc402.myapplication.data.*
+import edu.iau.cshj.csc402.myapplication.state.*
 import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
-import edu.iau.cshj.csc402.myapplication.state.*
 
 @Composable
 internal fun ColumnScope.SettingsScreen(state:JeelUiState) {
-    with(state){
+    with(state) {
         PageHead("JEEL","Settings",::back)
         BodyText("A few preferences to make Jeel feel right for you.")
-        Panel{
-            SettingsRow("Language","English · العربية"){
-                go("language")
-            }
-            HorizontalDivider(color=Edge)
-            SettingsRow("Notifications","Session reminders and request updates"){
-                go("notificationSettings")
-            }
-            HorizontalDivider(color=Edge)
-            SettingsRow("Privacy","Manage your data and privacy preferences"){
-                go("privacy")
+        if(LocalUiScene.current.state=="Saving") {
+            Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                CircularProgressIndicator(Modifier.size(18.dp),strokeWidth=2.dp,color=Navy)
+                Caption("Saving preferences…")
             }
         }
-        DangerButton("Logout"){
-            confirmation="logout"
+        Heading("Language",18)
+        Picker("App language",language,listOf("English","العربية")) { language=it }
+        Heading("Notification preferences",18)
+        Panel {
+            ToggleRow("Session reminders",reminders) { reminders=it }
+            Caption("Push and email reminders for your next Zoom session.")
+            HorizontalDivider(color=Edge)
+            ToggleRow("Request and booking updates",updates) { updates=it }
+            Caption("Booking confirmations and accepted or rejected requests.")
         }
+        Heading("Account settings",18)
+        Panel {
+            Detail("✉","Email",email)
+            SettingsRow("Password","Update your account password") { }
+            HorizontalDivider(color=Edge)
+            SettingsRow("Privacy","Manage your data and privacy preferences") { }
+        }
+        DangerButton("Logout") { confirmation="logout" }
         Caption("Jeel 1.0 · Guidance for every generation")
-        Action("Preview ${if(isMentor)"Mentee" else "Mentor"} screens",secondary=true){
-            role=if(isMentor)"Mentee" else "Mentor"
-            photo=if(role=="Mentor")R.drawable.jeel_omar else R.drawable.jeel_aisha
-            name=if(role=="Mentor")"Dr. Omar Haddad" else "Aisha Rahman"
-            email=if(role=="Mentor")"omar.haddad@gmail.com" else "aisha.rahman@gmail.com"
-            tab("home")
-        }
     }
-}
-
-@Preview(showBackground=true,widthDp=393,heightDp=852)
-@Composable
-private fun SettingsScreenPreview() {
-    JeelWorkspace("Mentee","","",initialRoute="settings"){}
 }

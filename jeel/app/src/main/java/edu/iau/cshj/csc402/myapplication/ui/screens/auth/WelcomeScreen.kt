@@ -33,7 +33,7 @@ internal fun ColumnScope.WelcomeScreen(state:AuthUiState) {
             }
         }
         Spacer(Modifier.height(24.dp))
-        Text("Your next chapter\nstarts with a mentor.", color = Navy, fontFamily = FontFamily.Serif, fontSize = 32.sp, lineHeight = 36.sp)
+        Text("Your next chapter\nstarts with a mentor.", color = Navy, fontFamily = JeelSerif, fontSize = 32.sp, lineHeight = 36.sp)
         Spacer(Modifier.height(14.dp))
         Body("Connect with experienced professionals and retired experts. Build confidence, find direction, and turn your ambitions into a plan.")
         Spacer(Modifier.height(24.dp))
@@ -48,7 +48,7 @@ internal fun ColumnScope.WelcomeScreen(state:AuthUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun WelcomeScreenPreview() {
     PreviewScreen { WelcomeScreen(AuthUiState()) }

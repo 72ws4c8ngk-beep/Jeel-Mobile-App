@@ -20,9 +20,8 @@ internal class AuthUiState {
     fun back(){
         go(when(screen){
             "login","signup"->"welcome"
-            "role"->"signup"
-            "profile"->"role"
-            "reset","sent"->"login"
+            "profile"->"signup"
+            "reset"->"login"
             else->"welcome"
         })
     }

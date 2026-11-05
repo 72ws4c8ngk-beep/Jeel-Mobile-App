@@ -2,8 +2,8 @@ package edu.iau.cshj.csc402.myapplication.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-internal val Navy = Color(0xFF1B364B)
-internal val Cream = Color(0xFFF8F7F3)
+internal val Navy = Color(0xFF18354A)
+internal val Cream = Color(0xFFF8F6F2)
 internal val Slate = Color(0xFF52636B)
 internal val Gold = Color(0xFFA17B58)
 internal val Mist = Color(0xFFE9EFF2)

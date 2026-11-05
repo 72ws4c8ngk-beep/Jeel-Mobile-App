@@ -51,7 +51,7 @@ internal fun ColumnScope.LoginScreen(state:AuthUiState) {
     }
 }
 
-@Preview(showBackground=true,widthDp=393,heightDp=852)
+@Preview(showBackground=true,widthDp=412,heightDp=892)
 @Composable
 private fun LoginScreenPreview() {
     PreviewScreen { LoginScreen(AuthUiState()) }
