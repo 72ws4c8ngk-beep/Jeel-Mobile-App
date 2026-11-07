@@ -15,6 +15,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.sp
 import edu.iau.cshj.csc402.myapplication.R
+
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+
 @Composable
 internal fun ProfileOnboardingScreen(role:String,fullName:String,back:()->Unit,complete:(Map<String,String>)->Unit) {
     if(role=="Mentor") MentorOnboardingScreen(fullName,back,complete)
@@ -106,9 +110,24 @@ private fun MenteeOnboardingScreen(fullName:String,back:()->Unit,complete:(Map<S
             EditBox("A little about you · optional",description,3){
                 description=it
             }
-            Action("→ Save and continue"){
-                complete(emptyMap())
-            }
+                Action("→ Save and continue") {
+                    complete(
+                        mapOf(
+                            "fullName" to fullName,
+                            "role" to role,
+                            "age" to age,
+                            "studyStage" to studyStage,
+                            "fieldOfStudy" to study,
+                            "university" to university,
+                            "description" to description,
+                            "goal" to goal,
+                            "interests" to interests.joinToString(", "),
+                            "skills" to skills.joinToString(", "),
+                            "topics" to topics.joinToString(", "),
+                            "photo" to photo.toString()
+                        )
+                    )
+                }
             Caption("You can edit these details later from Edit Profile.")
             }
         }
@@ -218,9 +237,25 @@ private fun MentorOnboardingScreen(fullName:String,back:()->Unit,complete:(Map<S
                 }
                 Info("Your time, your pace","Sessions are 45 min. You can adjust your schedule or pause availability at any time.")
 
-            Action("→ Save and continue"){
-                complete(emptyMap())
-            }
+                Action("→ Save and continue") {
+                    complete(
+                        mapOf(
+                            "fullName" to fullName,
+                            "role" to role,
+                            "age" to age,
+                            "jobTitle" to job,
+                            "industry" to industry,
+                            "experience" to experience,
+                            "description" to description,
+                            "skills" to skills.joinToString(", "),
+                            "topics" to topics.joinToString(", "),
+                            "days" to days.joinToString(", "),
+                            "times" to times,
+                            "language" to language,
+                            "photo" to photo.toString()
+                        )
+                    )
+                }
             Caption("You can edit these details later from Edit Profile.")
             }
         }
