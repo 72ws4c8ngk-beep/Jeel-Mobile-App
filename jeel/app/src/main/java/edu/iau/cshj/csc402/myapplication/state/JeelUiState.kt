@@ -6,6 +6,8 @@ import edu.iau.cshj.csc402.myapplication.R
 import edu.iau.cshj.csc402.myapplication.data.*
 import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
+import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
+import org.json.JSONObject
 
 
 @Stable
@@ -57,6 +59,8 @@ initialProfile:Map<String,String> = emptyMap()
     var filterAvailability by mutableStateOf("Any time")
     var filterRating by mutableStateOf("Any")
     var query by mutableStateOf("")
+    var mentorProfiles by mutableStateOf<List<MentorProfile>>(emptyList())
+    var selectedRoomMentorId by mutableStateOf<Int?>(null)
     var date by mutableIntStateOf(18)
     var month by mutableIntStateOf(10)
     var year by mutableIntStateOf(2026)
@@ -93,7 +97,13 @@ initialProfile:Map<String,String> = emptyMap()
     var photoOptions by mutableStateOf(false)
     var notice by mutableStateOf("")
     var confirmation by mutableStateOf("")
-    val selectedMentor get()=mentors[mentorIndex]
+    val selectedMentor: Mentor
+        get() = selectedRoomMentorId
+            ?.let { id ->
+                mentorProfiles.firstOrNull { it.mentorId == id }
+                    ?.toDisplayMentor()
+            }
+            ?: mentors[mentorIndex]
     val requesterIndex get()=if(requestPerson=="Aisha Rahman")0 else 1
     val roots=listOf("home","explore","sessions","progress","profile","requests")
     fun go(next:String){
@@ -134,7 +144,12 @@ initialProfile:Map<String,String> = emptyMap()
         notice=""
     }
     fun openMentor(index:Int){
+        selectedRoomMentorId = null
         mentorIndex=index
+        go("mentor")
+    }
+    fun openRoomMentor(mentorId: Int) {
+        selectedRoomMentorId = mentorId
         go("mentor")
     }
     fun session(person:String,topic:String){
@@ -147,4 +162,60 @@ initialProfile:Map<String,String> = emptyMap()
         go("session")
     }
     fun filtered():List<IndexedValue<Mentor>> = mentors.withIndex().toList()
+    fun filteredRoomMentors(): List<MentorProfile> {
+        val searchText = query.trim()
+
+        return mentorProfiles.filter { mentor ->
+
+            val matchesSearch =
+                searchText.isEmpty() ||
+                        mentor.fullName.contains(searchText, ignoreCase = true) ||
+                        mentor.specialization.contains(searchText, ignoreCase = true)
+
+            val matchesArea = when (filterArea) {
+                "All expertise" -> true
+
+                "Product" -> mentor.specialization.contains(
+                    "Product", ignoreCase = true
+                )
+
+                "Design" -> mentor.specialization.contains(
+                    "Design", ignoreCase = true
+                )
+
+                "Data" -> mentor.specialization.contains(
+                    "Data", ignoreCase = true
+                )
+
+                else -> mentor.specialization.equals(
+                    filterArea, ignoreCase = true
+                )
+            }
+
+            val matchesRating = when (filterRating) {
+                "4.0+" -> mentor.rating >= 4.0
+                "4.5+" -> mentor.rating >= 4.5
+                "4.8+" -> mentor.rating >= 4.8
+                else -> true
+            }
+
+            val mentorSkills = runCatching {
+                JSONObject(mentor.profileData).optString("skills", "")
+            }.getOrDefault("")
+
+            val matchesSkills =
+                filterSkills == "Any" ||
+                        mentorSkills.contains(filterSkills, ignoreCase = true)
+
+            val mentorIndustry = runCatching {
+                JSONObject(mentor.profileData).optString("industry", "")
+            }.getOrDefault("")
+
+            val matchesIndustry =
+                filterIndustry == "All industries" ||
+                        mentorIndustry.equals(filterIndustry, ignoreCase = true)
+
+            matchesSearch && matchesArea && matchesRating && matchesSkills && matchesIndustry
+        }
+    }
 }

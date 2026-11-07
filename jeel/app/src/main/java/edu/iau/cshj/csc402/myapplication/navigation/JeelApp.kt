@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import edu.iau.cshj.csc402.myapplication.data.local.MentorEntity
 
 import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
@@ -38,6 +39,10 @@ fun JeelApp() {
     val repository = remember(context) {
         JeelRepository.getRepository(context)
     }
+
+    val mentorProfiles by remember(repository) {
+        repository.getMentorProfiles()
+    }.collectAsState(initial = emptyList())
 
     // Coroutine scope for database operations
     val scope = rememberCoroutineScope()
@@ -89,7 +94,33 @@ fun JeelApp() {
                                             experience = profile["experience"] ?: user.experience
                                         )
                                     )
+                                    if (user.role == "Mentor") {
+                                        val specialization = profile["specialization"] ?: "Product strategy"
 
+                                        val years = Regex("""\d+""")
+                                            .find(profile["experience"].orEmpty())
+                                            ?.value
+                                            ?.toIntOrNull() ?: 0
+
+                                        val existingMentor = repository.getMentorByUserId(user.userId)
+
+                                        if (existingMentor == null) {
+                                            repository.insertMentor(
+                                                MentorEntity(
+                                                    userId = user.userId,
+                                                    specialization = specialization,
+                                                    yearsOfExperience = years
+                                                )
+                                            )
+                                        } else {
+                                            repository.updateMentor(
+                                                existingMentor.copy(
+                                                    specialization = specialization,
+                                                    yearsOfExperience = years
+                                                )
+                                            )
+                                        }
+                                    }
                                     onboardingProfile.clear()
                                     onboardingProfile.putAll(profile)
 
@@ -118,6 +149,7 @@ fun JeelApp() {
                     initialName = fullName,
                     initialEmail = email,
                     initialProfile = onboardingProfile,
+                    mentorProfiles = mentorProfiles,
                     logout = {
                         go("welcome")
                     }

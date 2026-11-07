@@ -32,9 +32,26 @@ interface JeelDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertMentor(mentor: MentorEntity): Long
 
+    @Query("SELECT * FROM mentors WHERE userId = :userId LIMIT 1")
+    suspend fun getMentorByUserId(userId: Int): MentorEntity?
     @Query("SELECT * FROM mentors")
     fun getAllMentors(): Flow<List<MentorEntity>>
 
+    @Query("""
+    SELECT
+        m.mentorId,
+        m.userId,
+        u.fullName,
+        m.specialization,
+        m.yearsOfExperience,
+        m.rating,
+        u.bio,
+        u.profileData
+    FROM mentors AS m
+    INNER JOIN users AS u ON m.userId = u.userId
+""")
+
+    fun getMentorProfiles(): Flow<List<MentorProfile>>
     @Query("SELECT * FROM mentors WHERE mentorId = :mentorId")
     suspend fun getMentorById(mentorId: Int): MentorEntity?
 
