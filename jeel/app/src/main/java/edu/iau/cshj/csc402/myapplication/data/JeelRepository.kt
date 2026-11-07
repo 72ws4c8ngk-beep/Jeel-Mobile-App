@@ -6,6 +6,7 @@ import edu.iau.cshj.csc402.myapplication.data.local.JeelDatabase
 import edu.iau.cshj.csc402.myapplication.data.local.MentorEntity
 import edu.iau.cshj.csc402.myapplication.data.local.SessionEntity
 import edu.iau.cshj.csc402.myapplication.data.local.UserEntity
+import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
 import kotlinx.coroutines.flow.Flow
 
 /** Local persistence boundary. Suspend operations must be called from a coroutine. */
@@ -17,7 +18,9 @@ class JeelRepository(private val dao: JeelDao) {
 
     suspend fun insertMentor(mentor: MentorEntity): Long = dao.insertMentor(mentor)
     fun getAllMentors(): Flow<List<MentorEntity>> = dao.getAllMentors()
+    fun getMentorProfiles(): Flow<List<MentorProfile>> = dao.getMentorProfiles()
     suspend fun getMentorById(mentorId: Int): MentorEntity? = dao.getMentorById(mentorId)
+    suspend fun getMentorByUserId(userId: Int): MentorEntity? = dao.getMentorByUserId(userId)
     suspend fun updateMentor(mentor: MentorEntity) = dao.updateMentor(mentor)
 
     suspend fun insertSession(session: SessionEntity): Long = dao.insertSession(session)

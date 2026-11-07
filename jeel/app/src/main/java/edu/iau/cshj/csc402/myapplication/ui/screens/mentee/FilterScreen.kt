@@ -26,16 +26,15 @@ internal fun ColumnScope.FilterScreen(state:JeelUiState) {
         Chips(listOf("Any","Roadmapping","Communication","Leadership"),filterSkills){
             filterSkills=it
         }
-        Heading("Availability",18)
-        Chips(listOf("Any time","This week","Next week","Weekends"),filterAvailability){
-            filterAvailability=it
-        }
+        Heading("Availability", 18)
+        BodyText("Availability filters will be enabled when mentor schedules are connected.")
+
         Heading("Minimum rating",18)
         Chips(listOf("Any","4.0+","4.5+","4.8+"),filterRating){
             filterRating=it
         }
-        Info("${filtered().size} mentors match your preferences","You can always adjust these filters to discover more perspectives.")
-        Action("Apply filters · ${filtered().size} mentors"){
+        Info("${filteredRoomMentors().size} mentors match your preferences","You can always adjust these filters to discover more perspectives.")
+        Action("Apply filters · ${filteredRoomMentors().size} mentors"){
             back()
         }
         Action("Reset filters",secondary=true){

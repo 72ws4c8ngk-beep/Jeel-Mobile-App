@@ -18,9 +18,10 @@ import edu.iau.cshj.csc402.myapplication.state.*
 import edu.iau.cshj.csc402.myapplication.ui.screens.mentee.*
 import edu.iau.cshj.csc402.myapplication.ui.screens.mentor.*
 import edu.iau.cshj.csc402.myapplication.ui.screens.shared.*
+import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
 
 @Composable
-fun JeelWorkspace(initialRole:String,initialName:String,initialEmail:String,initialRoute:String="home",initialProfile:Map<String,String> = emptyMap(),logout:()->Unit) {
+fun JeelWorkspace( initialRole: String, initialName: String, initialEmail: String, initialRoute: String = "home", initialProfile: Map<String, String> = emptyMap(), mentorProfiles: List<MentorProfile> = emptyList(), logout: () -> Unit) {
     val scene=LocalUiScene.current
     val state=remember(initialRole,initialRoute,scene){
         JeelUiState(initialRole,initialName,initialEmail,initialRoute,initialProfile).apply {
@@ -52,6 +53,9 @@ fun JeelWorkspace(initialRole:String,initialName:String,initialEmail:String,init
                 "Discard changes" -> confirmation="discard"
             }
         }
+    }
+    LaunchedEffect(mentorProfiles) {
+        state.mentorProfiles = mentorProfiles
     }
     with(state){
         BackHandler{

@@ -138,6 +138,9 @@ private fun MenteeOnboardingScreen(fullName:String,back:()->Unit,complete:(Map<S
 @Composable
 private fun MentorOnboardingScreen(fullName:String,back:()->Unit,complete:(Map<String,String>)->Unit) {
     val role="Mentor"
+    var expertise by rememberSaveable { mutableStateOf("Product strategy")
+    }
+
     var age by rememberSaveable { mutableStateOf("58") }
 
     var job by rememberSaveable{
@@ -204,9 +207,9 @@ private fun MentorOnboardingScreen(fullName:String,back:()->Unit,complete:(Map<S
             EditBox("Job title",job){
                 job=it
             }
-            Picker("Expertise","Product strategy",listOf("Product strategy","UX & design","Data & analytics")){
-                skills=listOf(it)
-            }
+                Picker("Expertise", expertise,listOf("Product strategy", "UX & design", "Data & analytics")) {
+                    expertise = it
+                }
             Picker("Industry",industry,listOf("Fintech","Technology","Education","Healthcare")){
                 industry=it
             }
@@ -242,6 +245,7 @@ private fun MentorOnboardingScreen(fullName:String,back:()->Unit,complete:(Map<S
                         mapOf(
                             "fullName" to fullName,
                             "role" to role,
+                            "specialization" to expertise,
                             "age" to age,
                             "jobTitle" to job,
                             "industry" to industry,
