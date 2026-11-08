@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import edu.iau.cshj.csc402.myapplication.data.*
 import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
@@ -19,188 +20,543 @@ import edu.iau.cshj.csc402.myapplication.ui.screens.mentee.*
 import edu.iau.cshj.csc402.myapplication.ui.screens.mentor.*
 import edu.iau.cshj.csc402.myapplication.ui.screens.shared.*
 import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
+import kotlinx.coroutines.launch
+import edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity
+private fun timeToMinutes(time: String): Int? {
+    return try {
+        val parts = time.trim().uppercase().split(" ")
+        val clock = parts[0].split(":")
+        val hour = clock[0].toInt()
+        val minute = clock[1].toInt()
+        val period = parts[1]
 
+        if (hour !in 1..12 || minute !in 0..59 ||
+            period !in listOf("AM", "PM")
+        ) return null
+
+        (hour % 12) * 60 + minute +
+                if (period == "PM") 720 else 0
+    } catch (e: Exception) {
+        null
+    }
+}
 @Composable
-fun JeelWorkspace( initialRole: String, initialName: String, initialEmail: String, initialRoute: String = "home", initialProfile: Map<String, String> = emptyMap(), mentorProfiles: List<MentorProfile> = emptyList(), logout: () -> Unit) {
-    val scene=LocalUiScene.current
-    val state=remember(initialRole,initialRoute,scene){
-        JeelUiState(initialRole,initialName,initialEmail,initialRoute,initialProfile).apply {
-            when(scene.state) {
-                "Completed tab" -> sessionTab="Completed"
-                "Cancelled tab" -> { sessionTab="Cancelled"; cancelled=true }
-                "Accepted tab" -> { requestTab="Accepted"; requestStates=listOf("Accepted","Accepted") }
-                "Rejected tab" -> { requestTab="Rejected"; requestStates=listOf("Rejected","Rejected") }
-                "Accepted" -> requestStates=listOf("Accepted","Pending")
-                "Rejected" -> requestStates=listOf("Rejected","Pending")
-                "Rating selected" -> rating=5
-                "Read" -> allRead=true
-                "Arabic selected" -> language="العربية"
-                "Notifications off" -> { reminders=false; updates=false }
-                "Reschedule","Reschedule confirmed" -> rescheduling=true
-                "Awaiting approval" -> bookingPending=true
-                "No slot selected" -> { date=0; time="" }
-                "Search results" -> query="Product strategy"
-                "No filters","Reset" -> { filterArea="All expertise"; filterSkills="Any"; filterAvailability="Any time" }
-                "Add slot","Edit slot","Invalid time","Overlapping slots" -> {
-                    slotDialog=true; editSlot=if(scene.state=="Edit slot") 0 else -1
-                    slotText=if(scene.state=="Invalid time") "11:45 AM" else "11:00 AM"
-                }
-                "Confirm cancellation" -> confirmation="cancel"
-                "Confirm acceptance" -> confirmation="accept"
-                "Confirm rejection" -> confirmation="reject"
-                "Confirm deletion" -> confirmation="delete"
-                "Confirm logout" -> confirmation="logout"
-                "Discard changes" -> confirmation="discard"
+fun JeelWorkspace(
+    initialRole: String,
+    initialName: String,
+    initialEmail: String,
+    initialRoute: String = "home",
+    initialProfile: Map<String, String> = emptyMap(),
+    mentorProfiles: List<MentorProfile> = emptyList(),
+    logout: () -> Unit
+) {
+    val scene = LocalUiScene.current
+    val scope = rememberCoroutineScope()
+
+    // MENTOR AVAILABILITY: Identify the logged-in mentor
+    val context = LocalContext.current
+
+    val repository = remember(context) {
+        JeelRepository.getRepository(context)
+    }
+
+    var currentMentorId by remember(initialEmail) {
+        mutableStateOf<Int?>(null)
+    }
+
+    LaunchedEffect(initialEmail, initialRole) {
+        currentMentorId = null
+
+        if (initialRole == "Mentor") {
+            val user = repository.getUserByEmail(
+                initialEmail.trim().lowercase()
+            )
+
+            if (user != null && user.role == "Mentor") {
+                currentMentorId =
+                    repository.getMentorByUserId(user.userId)?.mentorId
             }
         }
     }
+
+    val state = remember(initialRole, initialRoute, scene) {
+        JeelUiState(
+            initialRole,
+            initialName,
+            initialEmail,
+            initialRoute,
+            initialProfile
+        ).apply {
+            when (scene.state) {
+                "Completed tab" -> sessionTab = "Completed"
+                "Cancelled tab" -> {
+                    sessionTab = "Cancelled"
+                    cancelled = true
+                }
+
+                "Accepted tab" -> {
+                    requestTab = "Accepted"
+                    requestStates = listOf("Accepted", "Accepted")
+                }
+
+                "Rejected tab" -> {
+                    requestTab = "Rejected"
+                    requestStates = listOf("Rejected", "Rejected")
+                }
+
+                "Accepted" -> requestStates = listOf("Accepted", "Pending")
+                "Rejected" -> requestStates = listOf("Rejected", "Pending")
+                "Rating selected" -> rating = 5
+                "Read" -> allRead = true
+                "Arabic selected" -> language = "العربية"
+                "Notifications off" -> {
+                    reminders = false
+                    updates = false
+                }
+
+                "Reschedule", "Reschedule confirmed" -> rescheduling = true
+                "Awaiting approval" -> bookingPending = true
+                "No slot selected" -> {
+                    date = 0
+                    time = ""
+                }
+
+                "Search results" -> query = "Product strategy"
+                "No filters", "Reset" -> {
+                    filterArea = "All expertise"
+                    filterSkills = "Any"
+                    filterAvailability = "Any time"
+                }
+
+                "Add slot", "Edit slot", "Invalid time", "Overlapping slots" -> {
+                    slotDialog = true
+                    editSlot = if (scene.state == "Edit slot") 0 else -1
+                    slotText =
+                        if (scene.state == "Invalid time") "11:45 AM"
+                        else "11:00 AM"
+                }
+
+                "Confirm cancellation" -> confirmation = "cancel"
+                "Confirm acceptance" -> confirmation = "accept"
+                "Confirm rejection" -> confirmation = "reject"
+                "Confirm deletion" -> confirmation = "delete"
+                "Confirm logout" -> confirmation = "logout"
+                "Discard changes" -> confirmation = "discard"
+            }
+        }
+    }
+
     LaunchedEffect(mentorProfiles) {
         state.mentorProfiles = mentorProfiles
     }
-    with(state){
-        BackHandler{
+    LaunchedEffect(currentMentorId) {
+        val mentorId = currentMentorId
+
+        if (mentorId == null) {
+            state.availabilitySlots = emptyList()
+        } else {
+            repository.getAvailabilityByMentor(mentorId).collect { slots ->
+                state.availabilitySlots = slots
+            }
+        }
+    }
+    LaunchedEffect(state.selectedRoomMentorId) {
+        val mentorId = state.selectedRoomMentorId
+
+        if (mentorId == null) {
+            state.bookingAvailabilitySlots = emptyList()
+        } else {
+            repository.getAvailabilityByMentor(mentorId).collect { slots ->
+                state.bookingAvailabilitySlots = slots
+            }
+        }
+    }
+    with(state) {
+        BackHandler {
             back()
         }
+
         JeelTheme {
-            Scaffold(containerColor=Cream,contentWindowInsets=WindowInsets.safeDrawing,bottomBar={
-                if(route in roots||route in listOf("session","request","notifications")) NavigationBar(containerColor=Color.White,tonalElevation=0.dp){
-                    val tabs=if(isMentor)listOf("home" to "Home","requests" to "Requests","sessions" to "Sessions","profile" to "Profile")else listOf("home" to "Home","explore" to "Explore","sessions" to "Sessions","progress" to "Progress","profile" to "Profile")
-                    tabs.forEach{
-                        (key,label)->NavigationBarItem(selected=route==key||(key=="sessions"&&route=="session")||(key=="requests"&&route=="request"),onClick={
-                            tab(key)
-                        },icon={
-                            JeelOutlineIcon(key)
-                        },label={
-                            Text(label,fontSize=10.sp)
-                        },colors=NavigationBarItemDefaults.colors(indicatorColor=Mist,selectedIconColor=Navy,selectedTextColor=Navy,unselectedIconColor=Slate,unselectedTextColor=Slate))
+            Scaffold(
+                containerColor = Cream,
+                contentWindowInsets = WindowInsets.safeDrawing,
+                bottomBar = {
+                    if (route in roots || route in listOf(
+                            "session",
+                            "request",
+                            "notifications"
+                        )
+                    ) {
+                        NavigationBar(
+                            containerColor = Color.White,
+                            tonalElevation = 0.dp
+                        ) {
+                            val tabs =
+                                if (isMentor)
+                                    listOf(
+                                        "home" to "Home",
+                                        "requests" to "Requests",
+                                        "sessions" to "Sessions",
+                                        "profile" to "Profile"
+                                    )
+                                else
+                                    listOf(
+                                        "home" to "Home",
+                                        "explore" to "Explore",
+                                        "sessions" to "Sessions",
+                                        "progress" to "Progress",
+                                        "profile" to "Profile"
+                                    )
+
+                            tabs.forEach { (key, label) ->
+                                NavigationBarItem(
+                                    selected =
+                                        route == key ||
+                                                (key == "sessions" && route == "session") ||
+                                                (key == "requests" && route == "request"),
+                                    onClick = {
+                                        tab(key)
+                                    },
+                                    icon = {
+                                        JeelOutlineIcon(key)
+                                    },
+                                    label = {
+                                        Text(label, fontSize = 10.sp)
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        indicatorColor = Mist,
+                                        selectedIconColor = Navy,
+                                        selectedTextColor = Navy,
+                                        unselectedIconColor = Slate,
+                                        unselectedTextColor = Slate
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
-            }){
-                padding->
-                key(route){
-                    Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(horizontal=24.dp,vertical=16.dp),verticalArrangement=Arrangement.spacedBy(22.dp)){
+            ) { padding ->
+                key(route) {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .imePadding()
+                            .verticalScroll(rememberScrollState())
+                            .padding(
+                                horizontal = 24.dp,
+                                vertical = 16.dp
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(22.dp)
+                    ) {
                         UiStatePresentation {
-                        when(route){
-                            "home" -> if(isMentor) MentorHomeScreen(state) else MenteeHomeScreen(state)
-                            "explore" -> ExploreScreen(state)
-                            "filters" -> FilterScreen(state)
-                            "mentor" -> MentorDetailScreen(state)
-                            "book" -> BookingScreen(state)
-                            "confirmation" -> BookingConfirmationScreen(state)
-                            "sessions" -> if(isMentor) MentorSessionsScreen(state) else MenteeSessionsScreen(state)
-                            "session" -> SessionDetailsScreen(state)
-                            "review" -> SessionReviewScreen(state)
-                            "requests" -> RequestsScreen(state)
-                            "request" -> RequestDetailScreen(state)
-                            "availability" -> AvailabilityScreen(state)
-                            "progress" -> ProgressScreen(state)
-                            "profile" -> MyProfileScreen(state)
-                            "editProfile" -> if(isMentor) MentorEditProfileScreen(state) else MenteeEditProfileScreen(state)
-                            "notifications" -> NotificationsScreen(state)
-                            "settings" -> SettingsScreen(state)
+                            when (route) {
+                                "home" ->
+                                    if (isMentor) MentorHomeScreen(state)
+                                    else MenteeHomeScreen(state)
+
+                                "explore" -> ExploreScreen(state)
+                                "filters" -> FilterScreen(state)
+                                "mentor" -> MentorDetailScreen(state)
+                                "book" -> BookingScreen(state)
+                                "confirmation" -> BookingConfirmationScreen(state)
+
+                                "sessions" ->
+                                    if (isMentor) MentorSessionsScreen(state)
+                                    else MenteeSessionsScreen(state)
+
+                                "session" -> SessionDetailsScreen(state)
+                                "review" -> SessionReviewScreen(state)
+                                "requests" -> RequestsScreen(state)
+                                "request" -> RequestDetailScreen(state)
+                                "availability" -> AvailabilityScreen(state)
+                                "progress" -> ProgressScreen(state)
+                                "profile" -> MyProfileScreen(state)
+
+                                "editProfile" ->
+                                    if (isMentor) MentorEditProfileScreen(state)
+                                    else MenteeEditProfileScreen(state)
+
+                                "notifications" -> NotificationsScreen(state)
+                                "settings" -> SettingsScreen(state)
+                            }
                         }
-                        }
+
                         Spacer(Modifier.height(12.dp))
                     }
                 }
             }
-            if(confirmation.isNotEmpty())AlertDialog(onDismissRequest={
-                confirmation=""
-            },title={
-                Text(when(confirmation){
-                    "logout"->"Log out of Jeel?"
-                    "cancel"->"Cancel this session?"
-                    "accept"->"Accept this request?"
-                    "reject"->"Reject this request?"
-                    "delete"->"Delete this time slot?"
-                    "discard"->"Discard your changes?"
-                    else->"Confirm this action?"
-                })
-            },text={
-                Text(when(confirmation) {
-                    "logout" -> "You can log in again at any time to continue your mentorship journey."
-                    "cancel" -> "Both participants will be notified. This appointment will leave your upcoming sessions."
-                    "accept" -> "An upcoming Zoom session will be created for this mentorship."
-                    "reject" -> "The mentee will be notified of your decision."
-                    "delete" -> "Mentees will no longer be able to book this available time. Existing bookings stay unchanged."
-                    "discard" -> "Your unsaved edits will be lost. Your saved profile will stay as it was."
-                    else -> "Review the details before continuing."
-                })
-            },confirmButton={
-                TextButton(onClick={
-                    when(confirmation){
-                        "logout" -> logout()
-                        "cancel" -> tab("sessions")
-                        "reject" -> tab("requests")
-                        "accept" -> tab("sessions")
-                        "discard" -> back()
+
+            if (confirmation.isNotEmpty()) {
+                AlertDialog(
+                    onDismissRequest = {
+                        confirmation = ""
+                    },
+                    title = {
+                        Text(
+                            when (confirmation) {
+                                "logout" -> "Log out of Jeel?"
+                                "cancel" -> "Cancel this session?"
+                                "accept" -> "Accept this request?"
+                                "reject" -> "Reject this request?"
+                                "delete" -> "Delete this time slot?"
+                                "discard" -> "Discard your changes?"
+                                else -> "Confirm this action?"
+                            }
+                        )
+                    },
+                    text = {
+                        Text(
+                            when (confirmation) {
+                                "logout" ->
+                                    "You can log in again at any time to continue your mentorship journey."
+
+                                "cancel" ->
+                                    "Both participants will be notified. This appointment will leave your upcoming sessions."
+
+                                "accept" ->
+                                    "An upcoming Zoom session will be created for this mentorship."
+
+                                "reject" ->
+                                    "The mentee will be notified of your decision."
+
+                                "delete" ->
+                                    "Mentees will no longer be able to book this available time. Existing bookings stay unchanged."
+
+                                "discard" ->
+                                    "Your unsaved edits will be lost. Your saved profile will stay as it was."
+
+                                else ->
+                                    "Review the details before continuing."
+                            }
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                when (confirmation) {
+                                    "logout" -> logout()
+                                    "cancel" -> tab("sessions")
+                                    "reject" -> tab("requests")
+                                    "accept" -> tab("sessions")
+                                    "delete" -> {
+                                        val mentorId = currentMentorId
+                                        val slotId = deletingSlotId
+
+                                        val slot = availabilitySlots.firstOrNull {
+                                            it.availabilityId == slotId &&
+                                                    it.mentorId == mentorId
+                                        }
+
+                                        if (slot != null) {
+                                            scope.launch {
+                                                repository.deleteAvailability(slot)
+                                            }
+                                        }
+
+                                        deletingSlotId = null
+                                    }
+                                    "discard" -> back()
+                                }
+                                confirmation = ""
+                            }
+                        ) {
+                            Text(
+                                when (confirmation) {
+                                    "logout" -> "Log out"
+                                    "cancel" -> "Cancel session"
+                                    "accept" -> "Accept request"
+                                    "reject" -> "Reject request"
+                                    "delete" -> "Delete slot"
+                                    "discard" -> "Discard changes"
+                                    else -> "Confirm"
+                                }
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                confirmation = ""
+                            }
+                        ) {
+                            Text(
+                                if (confirmation == "discard")
+                                    "Keep editing"
+                                else "Go back"
+                            )
+                        }
                     }
-                    confirmation=""
-                }){
-                    Text(when(confirmation) {
-                        "logout" -> "Log out"
-                        "cancel" -> "Cancel session"
-                        "accept" -> "Accept request"
-                        "reject" -> "Reject request"
-                        "delete" -> "Delete slot"
-                        "discard" -> "Discard changes"
-                        else -> "Confirm"
-                    })
-                }
-            },dismissButton={
-                TextButton(onClick={
-                    confirmation=""
-                }){
-                    Text(if(confirmation=="discard") "Keep editing" else "Go back")
-                }
-            })
-            if(slotDialog)AlertDialog(onDismissRequest={
-                slotDialog=false
-            },title={
-                Text(if(editSlot<0)"Add time slot" else "Edit time slot")
-            },text={
-                Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                    Picker("Day",selectedDay,listOf("Mon","Tue","Wed","Thu","Fri","Sat","Sun")) { selectedDay=it }
-                    EditBox("Start time",slotText) { slotText=it }
-                    EditBox("End time",if(scene.state=="Invalid time") "11:00 AM" else "11:45 AM") { }
-                    Caption("Arabia Standard Time (UTC+3)")
-                    if(scene.state=="Invalid time") Info("Invalid time","End time must be after start time.")
-                    if(scene.state=="Overlapping slots") Info("Overlapping slots","This time overlaps 11:00–11:45 AM. Choose another slot.")
-                }
-            },confirmButton={
-                TextButton(onClick={
-                    slotDialog=false
-                }){
-                    Text("Save")
-                }
-            },dismissButton={
-                TextButton(onClick={
-                    slotDialog=false
-                }){
-                    Text("Cancel")
-                }
-            })
-            if(addGoalDialog)AlertDialog(onDismissRequest={
-                addGoalDialog=false
-            },title={
-                Text("Add learning goal")
-            },text={
-                EditBox("Goal title",newGoal){
-                    newGoal=it
-                }
-            },confirmButton={
-                TextButton(onClick={
-                    addGoalDialog=false
-                }){
-                    Text("Add")
-                }
-            },dismissButton={
-                TextButton(onClick={
-                    addGoalDialog=false
-                }){
-                    Text("Cancel")
-                }
-            })
+                )
+            }
+
+            if (slotDialog) {
+                AlertDialog(
+                    onDismissRequest = {
+                        slotDialog = false
+                    },
+                    title = {
+                        Text(
+                            if (editSlot < 0)
+                                "Add time slot"
+                            else
+                                "Edit time slot"
+                        )
+                    },
+                    text = {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Picker(
+                                "Day",
+                                selectedDay,
+                                listOf(
+                                    "Mon", "Tue", "Wed",
+                                    "Thu", "Fri", "Sat", "Sun"
+                                )
+                            ) {
+                                selectedDay = it
+                            }
+
+                            EditBox("Start time", slotText) {
+                                slotText = it
+                            }
+
+                            EditBox("End time", slotEndText) {
+                                slotEndText = it
+                            }
+
+                            Caption("Arabia Standard Time (UTC+3)")
+                            if (notice.isNotEmpty()) {
+                                Text(
+                                    text = notice,
+                                    color = Color.Red
+                                )
+                            }
+                            if (scene.state == "Invalid time") {
+                                Info(
+                                    "Invalid time",
+                                    "End time must be after start time."
+                                )
+                            }
+
+                            if (scene.state == "Overlapping slots") {
+                                Info(
+                                    "Overlapping slots",
+                                    "This time overlaps 11:00–11:45 AM. Choose another slot."
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                val mentorId = currentMentorId
+
+                                if (mentorId != null) {
+                                    scope.launch {
+                                        val start = timeToMinutes(slotText)
+                                        val end = timeToMinutes(slotEndText)
+
+                                        if (start == null || end == null || end <= start) {
+                                            notice = "Invalid time. End time must be after start time."
+                                            return@launch
+                                        }
+                                        val hasOverlap = availabilitySlots.any { slot ->
+                                            val existingStart = timeToMinutes(slot.startTime)
+                                            val existingEnd = timeToMinutes(slot.endTime)
+
+                                            slot.dayOfWeek == selectedDay &&
+                                                    slot.availabilityId != editSlot &&
+                                                    existingStart != null &&
+                                                    existingEnd != null &&
+                                                    start < existingEnd &&
+                                                    end > existingStart
+                                        }
+
+                                        if (hasOverlap) {
+                                            notice = "This time overlaps an existing slot."
+                                            return@launch
+                                        }
+                                        if (editSlot == -1) {
+                                            repository.insertAvailability(
+                                                AvailabilityEntity(
+                                                    mentorId = mentorId,
+                                                    dayOfWeek = selectedDay,
+                                                    startTime = slotText,
+                                                    endTime = slotEndText
+                                                )
+                                            )
+                                        } else {
+                                            val existingSlot = availabilitySlots.firstOrNull {
+                                                it.availabilityId == editSlot &&
+                                                        it.mentorId == mentorId
+                                            }
+
+                                            if (existingSlot != null) {
+                                                repository.updateAvailability(
+                                                    existingSlot.copy(
+                                                        dayOfWeek = selectedDay,
+                                                        startTime = slotText,
+                                                        endTime = slotEndText
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        slotDialog = false
+                                    }
+                                }
+                            }
+                        ) {
+                            Text("Save")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                slotDialog = false
+                            }
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+            if (addGoalDialog) {
+                AlertDialog(
+                    onDismissRequest = {
+                        addGoalDialog = false
+                    },
+                    title = {
+                        Text("Add learning goal")
+                    },
+                    text = {
+                        EditBox("Goal title", newGoal) {
+                            newGoal = it
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                addGoalDialog = false
+                            }
+                        ) {
+                            Text("Add")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                addGoalDialog = false
+                            }
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
         }
     }
 }

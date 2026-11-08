@@ -38,14 +38,18 @@ internal fun ColumnScope.MentorDetailScreen(state:JeelUiState) {
         }
         Heading("What mentees say · 64 reviews",18)
         if(LocalUiScene.current.state=="No reviews") Info("No reviews yet","Be the first to share your experience after a session.") else ReviewCard()
+        val hasAvailableSlots = bookingAvailabilitySlots.isNotEmpty()
         Heading("Available dates",18)
         if(LocalUiScene.current.state!="No availability") Chips(listOf("Sun, 18 Oct","Sun, 25 Oct","Sun, 1 Nov"),""){
             date=if(it.contains("25"))25 else if(it.contains("1 Nov"))1 else 18
             month=if(it.contains("Nov"))11 else 10
         }
         Caption("45 min Zoom sessions · English · Arabia Standard Time (UTC+3)")
-        Action(if(selectedMentor.available&&LocalUiScene.current.state!="No availability")"Book session" else "No available slots",enabled=selectedMentor.available&&LocalUiScene.current.state!="No availability"){
-            rescheduling=false
+        Action(
+            if (hasAvailableSlots) "Book session" else "No available slots",
+            enabled = hasAvailableSlots
+        ) {
+            rescheduling = false
             go("book")
         }
     }

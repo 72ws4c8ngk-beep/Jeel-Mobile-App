@@ -1,3 +1,4 @@
+
 package edu.iau.cshj.csc402.myapplication.ui.screens.mentor
 
 import androidx.compose.ui.tooling.preview.Preview
@@ -14,65 +15,137 @@ import edu.iau.cshj.csc402.myapplication.ui.theme.*
 import edu.iau.cshj.csc402.myapplication.state.*
 
 @Composable
-internal fun ColumnScope.AvailabilityScreen(state:JeelUiState) {
-    with(state){
-        PageHead("MANAGE AVAILABILITY","Make room for mentorship",::back)
-        BodyText("Choose a rhythm that works for you. Your availability repeats weekly.")
-        Picker("Time zone","Arabia Standard Time (UTC+3)",listOf("Arabia Standard Time (UTC+3)")){
-        }
-        Heading("Weekly schedule preview",18)
-        Panel{
+internal fun ColumnScope.AvailabilityScreen(state: JeelUiState) {
+    with(state) {
+
+        val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+        val daySlots = availabilitySlots.filter {
+            it.dayOfWeek == selectedDay
+        }.sortedBy { it.startTime }
+
+        PageHead(
+            "MANAGE AVAILABILITY",
+            "Make room for mentorship",
+            ::back
+        )
+
+        BodyText(
+            "Choose a rhythm that works for you. Your availability repeats weekly."
+        )
+
+        Picker(
+            "Time zone",
+            "Arabia Standard Time (UTC+3)",
+            listOf("Arabia Standard Time (UTC+3)")
+        ) {}
+
+        Heading("Weekly schedule preview", 18)
+
+        Panel {
             BodyText("12–18 October 2026")
-            Chips(listOf("Mon","Tue","Wed","Thu","Fri","Sat","Sun"),selectedDay){
-                selectedDay=it
+
+            Chips(days, selectedDay) {
+                selectedDay = it
             }
-            Caption("$selectedDay selected · ${slots.size} available slots · 1 booked")
+
+            Caption(
+                "$selectedDay selected · ${daySlots.size} available slots"
+            )
         }
-        Heading("Available days",18)
-        MultiChips(listOf("Mon","Tue","Wed","Thu","Fri","Sat","Sun"),availableDays){
-            availableDays=it
-            selectedDay=it.lastOrNull()?:"Sun"
+
+        Heading("Available days", 18)
+
+        MultiChips(days, availableDays) {
+            availableDays = it
+            selectedDay = it.lastOrNull() ?: "Sun"
         }
-        Heading("$selectedDay time slots",18)
-        if(selectedDay in availableDays){
-            if(selectedDay=="Sun")Panel{
-                BodyText("10:00–10:45 AM")
-                Caption("Booked · locked for 18 Oct")
+
+        Heading("$selectedDay time slots", 18)
+
+        if (selectedDay in availableDays) {
+
+            if (daySlots.isEmpty()) {
+                Info(
+                    "No time slots yet",
+                    "Add a time slot for $selectedDay."
+                )
             }
-            slots.forEachIndexed{
-                i,s->Panel{
-                    Row(verticalAlignment=Alignment.CenterVertically){
-                        Column(Modifier.weight(1f)){
-                            BodyText(s)
-                            Caption("Available · 45 min")
+
+            daySlots.forEach { slot ->
+                Panel {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            BodyText(
+                                "${slot.startTime} – ${slot.endTime}"
+                            )
+                            Caption("Available")
                         }
-                        TextButton(onClick={
-                            editSlot=i
-                            slotText=s
-                            slotDialog=true
-                        }){
+
+                        TextButton(
+                            onClick = {
+                                editSlot = slot.availabilityId
+                                slotText = slot.startTime
+                                slotEndText = slot.endTime
+                                slotDialog = true
+                            }
+                        ) {
                             Text("Edit")
                         }
-                        TextButton(onClick={ confirmation="delete" }){
-                            Text("Delete",color=Color(0xFFB36A60))
+
+                        TextButton(
+                            onClick = {
+                                deletingSlotId = slot.availabilityId
+                                confirmation = "delete"
+                            }
+                        ) {
+                            Text(
+                                "Delete",
+                                color = Color(0xFFB36A60)
+                            )
                         }
                     }
                 }
             }
-            Action("+ Add new time slot",secondary=true){
-                editSlot=-1
-                slotText="3:00 PM"
-                slotDialog=true
+
+            Action(
+                "+ Add new time slot",
+                secondary = true
+            ) {
+                editSlot = -1
+                slotText = "3:00 PM"
+                slotEndText = "3:45 PM"
+                slotDialog = true
+                notice = "Add button clicked"
             }
-        } else Info("No availability on $selectedDay","Select this day above to add availability.")
-        Info("Existing bookings stay in place","Weekly availability changes apply only to new requests. Reschedule or cancel a booked session from its details.")
-        Action("Save availability"){
+
+        } else {
+            Info(
+                "No availability on $selectedDay",
+                "Select this day above to add availability."
+            )
+        }
+
+        Info(
+            "Existing bookings stay in place",
+            "Weekly availability changes apply only to new requests. Reschedule or cancel a booked session from its details."
+        )
+
+        Action("Save availability") {
+            // Persistence will be connected in JeelWorkspace.
         }
     }
 }
 
-@Preview(showBackground=true,widthDp=412,heightDp=892)
+@Preview(showBackground = true, widthDp = 412, heightDp = 892)
 @Composable
 private fun AvailabilityScreenPreview() {
-    JeelWorkspace("Mentor","","",initialRoute="availability"){}
+    JeelWorkspace(
+        "Mentor",
+        "",
+        "",
+        initialRoute = "availability"
+    ) {}
 }

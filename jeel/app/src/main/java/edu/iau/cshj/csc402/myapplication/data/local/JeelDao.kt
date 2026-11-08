@@ -1,12 +1,12 @@
+
 package edu.iau.cshj.csc402.myapplication.data.local
-
-
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Delete
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -34,6 +34,7 @@ interface JeelDao {
 
     @Query("SELECT * FROM mentors WHERE userId = :userId LIMIT 1")
     suspend fun getMentorByUserId(userId: Int): MentorEntity?
+
     @Query("SELECT * FROM mentors")
     fun getAllMentors(): Flow<List<MentorEntity>>
 
@@ -49,9 +50,9 @@ interface JeelDao {
         u.profileData
     FROM mentors AS m
     INNER JOIN users AS u ON m.userId = u.userId
-""")
-
+    """)
     fun getMentorProfiles(): Flow<List<MentorProfile>>
+
     @Query("SELECT * FROM mentors WHERE mentorId = :mentorId")
     suspend fun getMentorById(mentorId: Int): MentorEntity?
 
@@ -81,4 +82,31 @@ interface JeelDao {
 
     @Update
     suspend fun updateSession(session: SessionEntity)
+
+
+    // MENTOR AVAILABILITY
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAvailability(
+        availability: AvailabilityEntity
+    ): Long
+
+    @Query("""
+        SELECT * FROM availability
+        WHERE mentorId = :mentorId
+        ORDER BY dayOfWeek, startTime
+    """)
+    fun getAvailabilityByMentor(
+        mentorId: Int
+    ): Flow<List<AvailabilityEntity>>
+
+    @Update
+    suspend fun updateAvailability(
+        availability: AvailabilityEntity
+    )
+
+    @Delete
+    suspend fun deleteAvailability(
+        availability: AvailabilityEntity
+    )
 }

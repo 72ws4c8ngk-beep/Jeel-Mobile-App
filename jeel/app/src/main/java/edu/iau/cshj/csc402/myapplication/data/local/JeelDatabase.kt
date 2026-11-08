@@ -1,3 +1,4 @@
+
 package edu.iau.cshj.csc402.myapplication.data.local
 
 import android.content.Context
@@ -11,9 +12,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         UserEntity::class,
         MentorEntity::class,
-        SessionEntity::class
+        SessionEntity::class,
+        AvailabilityEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class JeelDatabase : RoomDatabase() {
@@ -50,6 +52,34 @@ abstract class JeelDatabase : RoomDatabase() {
             }
         }
 
+        // Mentor Availability: migration from version 3 to 4
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `availability` (
+                        `availabilityId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `mentorId` INTEGER NOT NULL,
+                        `dayOfWeek` TEXT NOT NULL,
+                        `startTime` TEXT NOT NULL,
+                        `endTime` TEXT NOT NULL,
+                        FOREIGN KEY(`mentorId`)
+                            REFERENCES `mentors`(`mentorId`)
+                            ON UPDATE NO ACTION
+                            ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS `index_availability_mentorId`
+                    ON `availability` (`mentorId`)
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JeelDatabase {
 
             return INSTANCE ?: synchronized(this) {
@@ -59,7 +89,12 @@ abstract class JeelDatabase : RoomDatabase() {
                     JeelDatabase::class.java,
                     "jeel_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)                    .build()
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4
+                    )
+                    .build()
                     .also { INSTANCE = it }
             }
         }
