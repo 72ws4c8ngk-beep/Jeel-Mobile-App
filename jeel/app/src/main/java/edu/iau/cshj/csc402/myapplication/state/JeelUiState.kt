@@ -61,6 +61,9 @@ initialProfile:Map<String,String> = emptyMap()
     var query by mutableStateOf("")
     var mentorProfiles by mutableStateOf<List<MentorProfile>>(emptyList())
     var selectedRoomMentorId by mutableStateOf<Int?>(null)
+    var bookingAvailabilitySlots by mutableStateOf(
+        emptyList<edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity>()
+    )
     var date by mutableIntStateOf(18)
     var month by mutableIntStateOf(10)
     var year by mutableIntStateOf(2026)
@@ -77,6 +80,14 @@ initialProfile:Map<String,String> = emptyMap()
     var availableDays by mutableStateOf(initialProfile["days"]?.split("|") ?: listOf("Sun"))
     var selectedDay by mutableStateOf("Sun")
     var slots by mutableStateOf(listOf("11:00 AM","2:00 PM"))
+    // MENTOR AVAILABILITY
+    var availabilitySlots by mutableStateOf(
+        listOf<edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity>()
+    )
+
+    var slotEndText by mutableStateOf("3:45 PM")
+
+    var deletingSlotId by mutableStateOf<Int?>(null)
     var slotDialog by mutableStateOf(false)
     var editSlot by mutableIntStateOf(-1)
     var slotText by mutableStateOf("3:00 PM")

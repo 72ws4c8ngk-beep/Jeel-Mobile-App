@@ -8,7 +8,7 @@ import androidx.compose.runtime.*
 import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
 import edu.iau.cshj.csc402.myapplication.state.*
-
+import java.util.Calendar
 @Composable
 internal fun ColumnScope.BookingScreen(state:JeelUiState) {
     with(state){
@@ -27,8 +27,30 @@ internal fun ColumnScope.BookingScreen(state:JeelUiState) {
             date=1
         })
         Heading("Available times · $date ${monthName(month)}",18)
-        Chips(listOf("10:00 AM","11:00 AM","2:00 PM"),time){
-            time=it
+        val calendar = Calendar.getInstance().apply {
+            set(year, month - 1, date)
+        }
+
+        val selectedWeekday = when (calendar.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "Mon"
+            Calendar.TUESDAY -> "Tue"
+            Calendar.WEDNESDAY -> "Wed"
+            Calendar.THURSDAY -> "Thu"
+            Calendar.FRIDAY -> "Fri"
+            Calendar.SATURDAY -> "Sat"
+            else -> "Sun"
+        }
+
+        val availableTimes = bookingAvailabilitySlots
+            .filter { it.dayOfWeek == selectedWeekday }
+            .map { it.startTime }
+
+        if (availableTimes.isEmpty()) {
+            Info("No available times", "This mentor has no available slots on this day.")
+        } else {
+            Chips(availableTimes, time) {
+                time = it
+            }
         }
         Caption("Each slot is 45 min · Arabia Standard Time (UTC+3)")
         Picker("Mentorship topic",bookingTopic,listOf("Career roadmap","CV review","Interview preparation","Portfolio review","Leadership")){
@@ -39,8 +61,10 @@ internal fun ColumnScope.BookingScreen(state:JeelUiState) {
         }
         Info("Your request, thoughtfully considered","Your mentor will review your request. You'll be notified when they accept.")
         Info("Your selection","$date ${monthName(month)} $year · $time · 45 min\n$bookingTopic with ${selectedMentor.name}")
-        Action(if(rescheduling) "Confirm reschedule" else "Confirm booking"){
-            go("confirmation")
+        if (availableTimes.isNotEmpty() && time in availableTimes) {
+            Action(if(rescheduling) "Confirm reschedule" else "Confirm booking") {
+                go("confirmation")
+            }
         }
     }
 }

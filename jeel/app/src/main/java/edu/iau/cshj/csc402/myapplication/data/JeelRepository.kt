@@ -1,3 +1,4 @@
+
 package edu.iau.cshj.csc402.myapplication.data
 
 import android.content.Context
@@ -7,10 +8,12 @@ import edu.iau.cshj.csc402.myapplication.data.local.MentorEntity
 import edu.iau.cshj.csc402.myapplication.data.local.SessionEntity
 import edu.iau.cshj.csc402.myapplication.data.local.UserEntity
 import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
+import edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity
 import kotlinx.coroutines.flow.Flow
 
 /** Local persistence boundary. Suspend operations must be called from a coroutine. */
 class JeelRepository(private val dao: JeelDao) {
+
     suspend fun insertUser(user: UserEntity): Long = dao.insertUser(user)
     suspend fun getUserById(userId: Int): UserEntity? = dao.getUserById(userId)
     suspend fun getUserByEmail(email: String): UserEntity? = dao.getUserByEmail(email)
@@ -30,6 +33,20 @@ class JeelRepository(private val dao: JeelDao) {
         dao.getSessionsByMentor(mentorId)
     suspend fun getSessionById(sessionId: Int): SessionEntity? = dao.getSessionById(sessionId)
     suspend fun updateSession(session: SessionEntity) = dao.updateSession(session)
+
+    // MENTOR AVAILABILITY
+
+    suspend fun insertAvailability(availability: AvailabilityEntity): Long =
+        dao.insertAvailability(availability)
+
+    fun getAvailabilityByMentor(mentorId: Int): Flow<List<AvailabilityEntity>> =
+        dao.getAvailabilityByMentor(mentorId)
+
+    suspend fun updateAvailability(availability: AvailabilityEntity) =
+        dao.updateAvailability(availability)
+
+    suspend fun deleteAvailability(availability: AvailabilityEntity) =
+        dao.deleteAvailability(availability)
 
     companion object {
         fun getRepository(context: Context): JeelRepository =
