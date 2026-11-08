@@ -188,6 +188,25 @@ fun JeelWorkspace(
             }
         }
     }
+    LaunchedEffect(currentMentorId) {
+        val mentorId = currentMentorId
+
+        if (mentorId == null) {
+            state.mentorSessions = emptyList()
+        } else {
+            repository.getSessionsByMentor(mentorId).collect { sessions ->
+                state.mentorSessions = sessions
+                val names = mutableMapOf<Int, String>()
+
+                sessions.forEach { session ->
+                    val user = repository.getUserById(session.menteeId)
+                    names[session.menteeId] = user?.fullName ?: "Unknown Mentee"
+                }
+
+                state.menteeNames = names
+            }
+        }
+    }
     LaunchedEffect(state.selectedRoomMentorId) {
         val mentorId = state.selectedRoomMentorId
 
@@ -406,8 +425,36 @@ fun JeelWorkspace(
                                 when (confirmation) {
                                     "logout" -> logout()
                                     "cancel" -> tab("sessions")
-                                    "reject" -> tab("requests")
-                                    "accept" -> tab("sessions")
+                                    "reject", "accept" -> {
+                                        val requestId = selectedRequestId
+                                        val mentorId = currentMentorId
+                                        val newStatus = if (confirmation == "accept") "Accepted" else "Rejected"
+
+                                        val selectedSession = mentorSessions.firstOrNull {
+                                            it.sessionId == requestId && it.mentorId == mentorId
+                                        }
+
+                                        if (selectedSession != null && selectedSession.status == "Pending") {
+                                            scope.launch {
+                                                val session = repository.getSessionById(requestId)
+
+                                                if (session != null &&
+                                                    session.mentorId == mentorId &&
+                                                    session.status == "Pending"
+                                                ) {
+                                                    repository.updateSession(
+                                                        session.copy(status = newStatus)
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        if (confirmation == "accept") {
+                                            tab("sessions")
+                                        } else {
+                                            tab("requests")
+                                        }
+                                    }
                                     "delete" -> {
                                         val mentorId = currentMentorId
                                         val slotId = deletingSlotId

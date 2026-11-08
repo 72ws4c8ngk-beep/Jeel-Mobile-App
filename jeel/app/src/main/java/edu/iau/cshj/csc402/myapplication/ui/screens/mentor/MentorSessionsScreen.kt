@@ -20,13 +20,33 @@ internal fun ColumnScope.MentorSessionsScreen(state:JeelUiState) {
             sessionTab=it
         }
         Heading(sessionTab,18)
+        val acceptedSessions = mentorSessions.filter {
+            it.status == "Accepted"
+        }
         when(sessionTab){
-            "Upcoming"->{
-                SessionCard("Yusuf Ali","Business graduate","Interview preparation",if(mentorCompleted)"Completed" else "Upcoming",R.drawable.jeel_yusuf,"Fri, 16 Oct 2026 · 11:00–11:45 AM"){
-                    session("Yusuf Ali","Interview preparation")
-                }
-                SessionCard("Aisha Rahman","Final-year Computer Science student","Career roadmap","Upcoming",R.drawable.jeel_aisha,"Sun, 18 Oct 2026 · 10:00–10:45 AM"){
-                    session("Aisha Rahman","Career roadmap")
+            "Upcoming" -> {
+                if (acceptedSessions.isEmpty()) {
+                    Info(
+                        "No upcoming sessions",
+                        "Accepted mentorship requests will appear here."
+                    )
+                } else {
+                    acceptedSessions.forEach { booking ->
+                        val menteeName =
+                            menteeNames[booking.menteeId] ?: "Unknown Mentee"
+
+                        SessionCard(
+                            menteeName,
+                            "Mentee",
+                            "Mentorship session",
+                            "Upcoming",
+                            R.drawable.jeel_aisha,
+                            "${booking.sessionDate} · ${booking.sessionTime}"
+                        ) {
+                            selectedRequestId = booking.sessionId
+                            session(menteeName, "Mentorship session")
+                        }
+                    }
                 }
             }
             "Completed"->{
