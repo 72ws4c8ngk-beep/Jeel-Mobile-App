@@ -64,7 +64,18 @@ interface JeelDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertSession(session: SessionEntity): Long
-
+    @Query("""
+    SELECT COUNT(*) FROM sessions
+    WHERE mentorId = :mentorId
+    AND sessionDate = :sessionDate
+    AND sessionTime = :sessionTime
+    AND status IN ('Pending', 'Accepted')
+""")
+    suspend fun countExistingBookings(
+        mentorId: Int,
+        sessionDate: String,
+        sessionTime: String
+    ): Int
     @Query("SELECT * FROM sessions WHERE menteeId = :menteeId")
     fun getSessionsByMentee(
         menteeId: Int

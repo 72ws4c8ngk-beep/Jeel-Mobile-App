@@ -10,8 +10,10 @@ import edu.iau.cshj.csc402.myapplication.ui.theme.*
 import edu.iau.cshj.csc402.myapplication.state.*
 import java.util.Calendar
 @Composable
-internal fun ColumnScope.BookingScreen(state:JeelUiState) {
-    with(state){
+internal fun ColumnScope.BookingScreen(
+    state: JeelUiState,
+    onConfirmBooking: () -> Unit = {}
+) {    with(state){
         PageHead(if(rescheduling) "RESCHEDULE YOUR SESSION" else "BOOK A SESSION",if(rescheduling) "Choose a new time" else "Make time for growth",::back)
         if(rescheduling) Info("Current appointment",sessionDate+" · "+sessionTime+" · 45 min on Zoom")
         Panel{
@@ -63,8 +65,7 @@ internal fun ColumnScope.BookingScreen(state:JeelUiState) {
         Info("Your selection","$date ${monthName(month)} $year · $time · 45 min\n$bookingTopic with ${selectedMentor.name}")
         if (availableTimes.isNotEmpty() && time in availableTimes) {
             Action(if(rescheduling) "Confirm reschedule" else "Confirm booking") {
-                go("confirmation")
-            }
+                onConfirmBooking()            }
         }
     }
 }

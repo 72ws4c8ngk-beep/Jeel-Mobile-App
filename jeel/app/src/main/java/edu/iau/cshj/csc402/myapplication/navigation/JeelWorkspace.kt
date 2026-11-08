@@ -22,6 +22,7 @@ import edu.iau.cshj.csc402.myapplication.ui.screens.shared.*
 import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
 import kotlinx.coroutines.launch
 import edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity
+import edu.iau.cshj.csc402.myapplication.data.local.SessionEntity
 private fun timeToMinutes(time: String): Int? {
     return try {
         val parts = time.trim().uppercase().split(" ")
@@ -62,6 +63,23 @@ fun JeelWorkspace(
 
     var currentMentorId by remember(initialEmail) {
         mutableStateOf<Int?>(null)
+    }
+    var currentMenteeId by remember(initialEmail) {
+        mutableStateOf<Int?>(null)
+    }
+
+    LaunchedEffect(initialEmail, initialRole) {
+        currentMenteeId = null
+
+        if (initialRole == "Mentee" && initialEmail.isNotBlank()) {
+            val user = repository.getUserByEmail(
+                initialEmail.trim().lowercase()
+            )
+
+            if (user != null && user.role == "Mentee") {
+                currentMenteeId = user.userId
+            }
+        }
     }
 
     LaunchedEffect(initialEmail, initialRole) {
@@ -145,7 +163,17 @@ fun JeelWorkspace(
             }
         }
     }
+    LaunchedEffect(currentMenteeId, state) {
+        val menteeId = currentMenteeId
 
+        if (menteeId == null) {
+            state.menteeSessions = emptyList()
+        } else {
+            repository.getSessionsByMentee(menteeId).collect { sessions ->
+                state.menteeSessions = sessions
+            }
+        }
+    }
     LaunchedEffect(mentorProfiles) {
         state.mentorProfiles = mentorProfiles
     }
@@ -258,8 +286,49 @@ fun JeelWorkspace(
                                 "explore" -> ExploreScreen(state)
                                 "filters" -> FilterScreen(state)
                                 "mentor" -> MentorDetailScreen(state)
-                                "book" -> BookingScreen(state)
-                                "confirmation" -> BookingConfirmationScreen(state)
+                                "book" -> BookingScreen(
+                                    state = state,
+                                    onConfirmBooking = {
+                                        val menteeId = currentMenteeId
+                                        val mentorId = state.selectedRoomMentorId
+
+                                        if (menteeId == null || mentorId == null) {
+                                            state.notice = "Unable to book. Please select a mentor."
+                                        } else {
+                                            scope.launch {
+                                                val selectedDate = "%04d-%02d-%02d".format(
+                                                    state.year,
+                                                    state.month,
+                                                    state.date
+                                                )
+
+                                                val existingBookings = repository.countExistingBookings(
+                                                    mentorId,
+                                                    selectedDate,
+                                                    state.time
+                                                )
+
+                                                if (existingBookings > 0) {
+                                                    state.notice = "This time slot is already booked. Please choose another."
+                                                } else {
+                                                    repository.insertSession(
+                                                        SessionEntity(
+                                                            menteeId = menteeId,
+                                                            mentorId = mentorId,
+                                                            sessionDate = selectedDate,
+                                                            sessionTime = state.time,
+                                                            status = "Pending",
+                                                            notes = state.bookingNote
+                                                        )
+                                                    )
+
+                                                    state.bookingPending = true
+                                                    state.go("confirmation")
+                                                }
+                                            }
+                                        }
+                                    }
+                                )                                "confirmation" -> BookingConfirmationScreen(state)
 
                                 "sessions" ->
                                     if (isMentor) MentorSessionsScreen(state)

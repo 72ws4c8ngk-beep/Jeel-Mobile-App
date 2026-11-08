@@ -8,7 +8,7 @@ import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
 import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
 import org.json.JSONObject
-
+import edu.iau.cshj.csc402.myapplication.data.local.SessionEntity
 
 @Stable
 internal class JeelUiState(
@@ -32,6 +32,7 @@ initialProfile:Map<String,String> = emptyMap()
     var cancelled by mutableStateOf(false)
     var mentorCompleted by mutableStateOf(false)
     var bookingPending by mutableStateOf(false)
+    var menteeSessions by mutableStateOf<List<SessionEntity>>(emptyList())
     var savedMentors by mutableStateOf(listOf<Int>())
     var name by mutableStateOf(initialName.ifBlank {
         if(isMentor) "Dr. Omar Haddad" else "Aisha Rahman"
