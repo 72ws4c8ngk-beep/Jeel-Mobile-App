@@ -32,7 +32,12 @@ initialProfile:Map<String,String> = emptyMap()
     var cancelled by mutableStateOf(false)
     var mentorCompleted by mutableStateOf(false)
     var bookingPending by mutableStateOf(false)
+
     var menteeSessions by mutableStateOf<List<SessionEntity>>(emptyList())
+    var mentorSessions by mutableStateOf<List<SessionEntity>>(emptyList())
+    var selectedRequestId by mutableIntStateOf(0)
+    var menteeNames by mutableStateOf<Map<Int, String>>(emptyMap())
+
     var savedMentors by mutableStateOf(listOf<Int>())
     var name by mutableStateOf(initialName.ifBlank {
         if(isMentor) "Dr. Omar Haddad" else "Aisha Rahman"

@@ -20,21 +20,28 @@ internal fun ColumnScope.RequestsScreen(state:JeelUiState) {
             requestTab=it
         }
         Heading(if(requestTab=="Pending")"Awaiting your response" else "$requestTab requests",18)
-        var visible=0
-        listOf("Aisha Rahman","Yusuf Ali").forEachIndexed{
-            i,p->if(requestStates[i]==requestTab){
-                visible++
-                Panel{
-                    Section("Received 15 Oct","• ${requestStates[i]}"){
-                    }
-                    Person(p,if(i==0)"Final-year Computer Science student" else "Business graduate",if(i==0)R.drawable.jeel_aisha else R.drawable.jeel_yusuf)
-                    BodyText(if(i==0)"Career roadmap" else "Leadership foundations")
-                    Caption(if(i==0)Goal else "Build confidence for my first consulting role")
-                    Caption("Sun, ${if(i==0)18 else 25} Oct 2026 · 10:00–10:45 AM")
-                    Action("View request ↗",secondary=true){
-                        requestPerson=p
-                        go("request")
-                    }
+        val filteredRequests = mentorSessions.filter { it.status == requestTab }
+        val visible = filteredRequests.size
+        filteredRequests.forEach { session ->
+            val menteeName = menteeNames[session.menteeId] ?: "Unknown Mentee"
+
+            Panel {
+                Section("Session Request", "• ${session.status}") {}
+
+                Person(
+                    menteeName,
+                    "Mentee",
+                    R.drawable.jeel_aisha
+                )
+
+                BodyText("Mentorship session")
+
+                Caption("${session.sessionDate} · ${session.sessionTime}")
+
+                Action("View request ↗️", secondary = true) {
+                    selectedRequestId = session.sessionId
+                    requestPerson = menteeName
+                    go("request")
                 }
             }
         }

@@ -14,26 +14,66 @@ import edu.iau.cshj.csc402.myapplication.state.*
 @Composable
 internal fun ColumnScope.RequestDetailScreen(state:JeelUiState) {
     with(state){
-        PageHead("REQUESTS · ${requestStates[requesterIndex].uppercase()}","Meet ${requestPerson.substringBefore(' ')}",::back)
-        Panel{
-            Person(requestPerson,if(requesterIndex==0)"Final-year Computer Science student" else "Business graduate",if(requesterIndex==0)R.drawable.jeel_aisha else R.drawable.jeel_yusuf)
-            Badge(requestStates[requesterIndex])
-            Detail("◇","Field of study",if(requesterIndex==0)"Computer Science · King Saud University" else "Business administration")
-            Detail("◎","Career goal",if(requesterIndex==0)Goal else "Build confidence for my first consulting role")
+        val selectedSession = mentorSessions.firstOrNull {
+            it.sessionId == selectedRequestId
         }
-        Heading("Where they'd like guidance",18)
-        Chips(listOf("Product management","Technology","Product thinking"),""){
+        if (selectedSession == null) {
+            PageHead(
+                "REQUEST DETAILS",
+                "Request not found",
+                ::back
+            )
+
+            Info(
+                "No request selected",
+                "Please return to Mentorship Requests and select a booking."
+            )
+
+            return@with
         }
+        PageHead(
+            "REQUESTS · ${selectedSession?.status?.uppercase() ?: "NOT FOUND"}",
+            "Meet ${requestPerson.substringBefore(' ')}",
+            ::back
+        )
+        Panel {
+            Person(
+                requestPerson,
+                "Mentee",
+                R.drawable.jeel_aisha
+            )
+
+            Badge(selectedSession?.status ?: "Unknown")
+
+            Detail(
+                "◇",
+                "Request ID",
+                selectedSession?.sessionId?.toString() ?: "Unavailable"
+            )
+
+            Detail(
+                "◎",
+                "Session status",
+                selectedSession?.status ?: "Unavailable"
+            )
+        }
+
         Panel(Mist){
-            SessionDetails("Sunday, 18 October 2026","10:00 AM",if(requesterIndex==0)"Career roadmap" else "Leadership foundations")
+            SessionDetails(
+                selectedSession?.sessionDate ?: "Date unavailable",
+                selectedSession?.sessionTime ?: "Time unavailable",
+                "Mentorship session"
+            )
             Detail("▣","Format","Zoom session · English")
         }
-        Heading("A message from ${requestPerson.substringBefore(' ')}",18)
-        Panel{
-            BodyText(Note)
+        Heading("Booking notes", 18)
+        Panel {
+            BodyText(
+                selectedSession?.notes?.takeIf { it.isNotBlank() }
+                    ?: "No notes provided."
+            )
         }
-        Info("Suggested match based on their goal and your expertise.","Their goals align with your career direction and product strategy topics.")
-        if(requestStates[requesterIndex]=="Pending"){
+        if (selectedSession?.status == "Pending") {
             Action("✓ Accept request"){
                 confirmation="accept"
             }
