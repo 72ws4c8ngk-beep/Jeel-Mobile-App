@@ -27,6 +27,15 @@ class JeelRepository(private val dao: JeelDao) {
     suspend fun updateMentor(mentor: MentorEntity) = dao.updateMentor(mentor)
 
     suspend fun insertSession(session: SessionEntity): Long = dao.insertSession(session)
+    suspend fun countExistingBookings(
+        mentorId: Int,
+        sessionDate: String,
+        sessionTime: String
+    ): Int = dao.countExistingBookings(
+        mentorId,
+        sessionDate,
+        sessionTime
+    )
     fun getSessionsByMentee(menteeId: Int): Flow<List<SessionEntity>> =
         dao.getSessionsByMentee(menteeId)
     fun getSessionsByMentor(mentorId: Int): Flow<List<SessionEntity>> =

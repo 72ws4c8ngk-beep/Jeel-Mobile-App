@@ -20,14 +20,36 @@ internal fun ColumnScope.MenteeSessionsScreen(state:JeelUiState) {
             sessionTab=it
         }
         Heading(sessionTab,18)
+        val upcomingSessions = menteeSessions.filter {
+            it.status == "Pending" || it.status == "Accepted"
+        }
         when(sessionTab){
-            "Upcoming"->{
-                if(!cancelled)SessionCard(if(bookingPending)sessionPerson else mentors[0].name,mentors[mentorIndex].job,if(bookingPending)currentSession else "Career roadmap",if(bookingPending)"Pending" else "Upcoming",mentors[mentorIndex].image,"$sessionDate · $sessionTime · 45 min"){
-                    session(if(bookingPending)sessionPerson else mentors[0].name,if(bookingPending)currentSession else "Career roadmap")
-                }
-                SessionCard(mentors[1].name,mentors[1].job,"Portfolio review","Upcoming",mentors[1].image,"Sun, 25 Oct 2026 · 11:00–11:45 AM"){
-                    mentorIndex=1
-                    session(mentors[1].name,"Portfolio review")
+            "Upcoming" -> {
+                if (upcomingSessions.isEmpty()) {
+                    Info(
+                        "No upcoming sessions",
+                        "Your booked sessions will appear here."
+                    )
+                } else {
+                    upcomingSessions.forEach { bookedSession ->
+                        val bookedMentor = mentorProfiles.firstOrNull {
+                            it.mentorId == bookedSession.mentorId
+                        }
+
+                        SessionCard(
+                            bookedMentor?.fullName ?: "Mentor",
+                            bookedMentor?.specialization ?: "Mentorship",
+                            "Mentoring session",
+                            bookedSession.status,
+                            mentors[mentorIndex].image,
+                            "${bookedSession.sessionDate} · ${bookedSession.sessionTime} · 45 min"
+                        ) {
+                            session(
+                                bookedMentor?.fullName ?: "Mentor",
+                                "Mentoring session"
+                            )
+                        }
+                    }
                 }
             }
             "Completed"->{
