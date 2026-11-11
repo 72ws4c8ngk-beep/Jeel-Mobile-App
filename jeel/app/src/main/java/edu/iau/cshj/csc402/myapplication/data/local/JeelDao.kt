@@ -96,6 +96,15 @@ interface JeelDao {
     suspend fun updateSession(session: SessionEntity)
 
 
+    @Query("UPDATE sessions SET status = 'Completed' WHERE sessionId = :id AND mentorId = :mentorId AND status = 'Accepted'")
+    suspend fun completeSession(id: Int, mentorId: Int): Int
+
+    @Query("UPDATE sessions SET status = 'Cancelled' WHERE sessionId = :id AND (menteeId = :menteeId OR mentorId = :mentorId) AND status IN ('Pending', 'Accepted')")
+    suspend fun cancelSession(id: Int, menteeId: Int?, mentorId: Int?): Int
+
+    @Query("UPDATE sessions SET rating = :rating, feedback = :feedback WHERE sessionId = :id AND menteeId = :menteeId AND status = 'Completed' AND rating IS NULL")
+    suspend fun submitReview(id: Int, menteeId: Int, rating: Int, feedback: String): Int
+
     // MENTOR AVAILABILITY
 
     @Insert(onConflict = OnConflictStrategy.ABORT)

@@ -9,20 +9,27 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import edu.iau.cshj.csc402.myapplication.data.*
-import edu.iau.cshj.csc402.myapplication.ui.components.*
-import edu.iau.cshj.csc402.myapplication.ui.theme.*
-import edu.iau.cshj.csc402.myapplication.state.*
+import edu.iau.cshj.csc402.myapplication.ui.components.Action
+import edu.iau.cshj.csc402.myapplication.ui.components.Badge
+import edu.iau.cshj.csc402.myapplication.ui.components.BodyText
+import edu.iau.cshj.csc402.myapplication.ui.components.Caption
+import edu.iau.cshj.csc402.myapplication.ui.components.EditBox
+import edu.iau.cshj.csc402.myapplication.ui.components.Heading
+import edu.iau.cshj.csc402.myapplication.ui.components.PageHead
+import edu.iau.cshj.csc402.myapplication.ui.components.Panel
+import edu.iau.cshj.csc402.myapplication.ui.components.Person
+import edu.iau.cshj.csc402.myapplication.ui.theme.Gold
+import edu.iau.cshj.csc402.myapplication.state.JeelUiState
 
 @Composable
 internal fun ColumnScope.SessionReviewScreen(state:JeelUiState) {
     with(state){
-        PageHead("SESSION COMPLETED · 18 OCT","A little reflection",::back)
+        PageHead("SESSION COMPLETED","A little reflection",::back)
         Panel{
-            Person(mentors[0].name,mentors[0].job,mentors[0].image)
+            Person(sessionPerson,selectedMentor.job,selectedMentor.image)
             Badge("Completed")
             BodyText("Career roadmap")
-            Caption("18 Oct 2026 · 10:00–10:45 AM")
+            Caption("$sessionDate · $sessionTime")
         }
         Heading("How was your session?",25)
         BodyText("Your feedback helps great guidance reach more people.")
@@ -39,10 +46,9 @@ internal fun ColumnScope.SessionReviewScreen(state:JeelUiState) {
         EditBox("Your feedback",feedback,4){
             feedback=it
         }
-        Caption("Your review will be visible on your mentor's profile with your first name.")
-        Action("Submit review",enabled=true){
-            sessionTab="Completed"
-            tab("sessions")
+        Caption("Your feedback is saved with this session.")
+        Action("Submit review",enabled=rating in 1..5 && !sessionSaving && selectedSession?.status == "Completed" && selectedSession?.rating == null){
+            submitSelectedReview()
         }
         Action("Not now",secondary=true){
             tab("sessions")

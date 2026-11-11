@@ -37,5 +37,7 @@ data class SessionEntity(
     val sessionDate: String,
     val sessionTime: String,
     val status: String = "Pending",
-    val notes: String = ""
+    val notes: String = "",
+    val rating: Int? = null,
+    val feedback: String = ""
 )

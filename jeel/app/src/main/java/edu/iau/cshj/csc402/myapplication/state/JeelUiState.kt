@@ -38,6 +38,26 @@ initialProfile:Map<String,String> = emptyMap()
     var selectedRequestId by mutableIntStateOf(0)
     var menteeNames by mutableStateOf<Map<Int, String>>(emptyMap())
 
+    var selectedSessionId by mutableIntStateOf(0)
+    val selectedSession get() = (if (isMentor) mentorSessions else menteeSessions)
+        .firstOrNull { it.sessionId == selectedSessionId }
+    var sessionSaving by mutableStateOf(false)
+    var completeSelectedSession: () -> Unit = {}
+    var submitSelectedReview: () -> Unit = {}
+
+    fun openSession(booking: SessionEntity) {
+        selectedSessionId = booking.sessionId
+        selectedRoomMentorId = booking.mentorId
+        sessionPerson = if (isMentor) menteeNames[booking.menteeId] ?: "Mentee"
+            else mentorProfiles.firstOrNull { it.mentorId == booking.mentorId }?.fullName ?: "Mentor"
+        sessionDate = booking.sessionDate
+        sessionTime = booking.sessionTime
+        bookingNote = booking.notes
+        rating = booking.rating ?: 0
+        feedback = booking.feedback
+        go("session")
+    }
+
     var savedMentors by mutableStateOf(listOf<Int>())
     var name by mutableStateOf(initialName.ifBlank {
         if(isMentor) "Dr. Omar Haddad" else "Aisha Rahman"
@@ -102,7 +122,7 @@ initialProfile:Map<String,String> = emptyMap()
     var extraGoals by mutableStateOf(listOf<String>())
     var completedActions by mutableStateOf(listOf(0))
     var rating by mutableIntStateOf(0)
-    var feedback by mutableStateOf("Omar helped me map the skills I need for an associate PM role. His practical advice gave me a clear plan and much more confidence.")
+    var feedback by mutableStateOf("")
     var reviewSent by mutableStateOf(false)
     var allRead by mutableStateOf(false)
     var reminders by mutableStateOf(true)
@@ -170,6 +190,7 @@ initialProfile:Map<String,String> = emptyMap()
         go("mentor")
     }
     fun session(person:String,topic:String){
+        selectedSessionId = 0
         sessionPerson=person
         currentSession=topic
         val index=mentors.indexOfFirst{
