@@ -2,6 +2,7 @@
 package edu.iau.cshj.csc402.myapplication.data.local
 
 import androidx.room.Dao
+import androidx.room.Transaction
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -47,7 +48,8 @@ interface JeelDao {
         m.yearsOfExperience,
         m.rating,
         u.bio,
-        u.profileData
+        u.profileData,
+        EXISTS(SELECT 1 FROM availability AS a WHERE a.mentorId = m.mentorId) AS hasAvailability
     FROM mentors AS m
     INNER JOIN users AS u ON m.userId = u.userId
     """)
@@ -83,6 +85,40 @@ interface JeelDao {
     @Update
     suspend fun updateSession(session: SessionEntity)
 
+
+    @Query("SELECT * FROM availability WHERE availabilityId = :slotId")
+    suspend fun findBookingSlot(slotId: Int): AvailabilityEntity?
+
+    @Query("""
+        SELECT COUNT(*) FROM sessions
+        WHERE mentorId = :mentorId AND sessionDate = :date
+          AND UPPER(TRIM(sessionTime)) = UPPER(TRIM(:time))
+          AND status NOT IN ('Rejected', 'Cancelled')
+    """)
+    suspend fun countBookingsAt(mentorId: Int, date: String, time: String): Int
+
+    @Transaction
+    suspend fun bookAvailableSession(
+        session: SessionEntity,
+        slotId: Int,
+        weekday: String
+    ): Boolean {
+        val slot = findBookingSlot(slotId) ?: return false
+        if (slot.mentorId != session.mentorId || slot.dayOfWeek != weekday ||
+            !slot.startTime.trim().equals(session.sessionTime.trim(), ignoreCase = true)
+        ) return false
+        if (countBookingsAt(session.mentorId, session.sessionDate, session.sessionTime) > 0) {
+            return false
+        }
+        insertSession(session)
+        return true
+    }
+
+    @Query("""
+        UPDATE sessions SET status = :status
+        WHERE sessionId = :sessionId AND mentorId = :mentorId AND status = 'Pending'
+    """)
+    suspend fun respondToPendingSession(sessionId: Int, mentorId: Int, status: String): Int
 
     // MENTOR AVAILABILITY
 

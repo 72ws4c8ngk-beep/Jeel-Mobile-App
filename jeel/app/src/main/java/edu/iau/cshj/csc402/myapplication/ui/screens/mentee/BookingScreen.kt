@@ -10,7 +10,7 @@ import edu.iau.cshj.csc402.myapplication.ui.theme.*
 import edu.iau.cshj.csc402.myapplication.state.*
 import java.util.Calendar
 @Composable
-internal fun ColumnScope.BookingScreen(state:JeelUiState) {
+internal fun ColumnScope.BookingScreen(state:JeelUiState, submitBooking: () -> Unit) {
     with(state){
         PageHead(if(rescheduling) "RESCHEDULE YOUR SESSION" else "BOOK A SESSION",if(rescheduling) "Choose a new time" else "Make time for growth",::back)
         if(rescheduling) Info("Current appointment",sessionDate+" · "+sessionTime+" · 45 min on Zoom")
@@ -21,10 +21,12 @@ internal fun ColumnScope.BookingScreen(state:JeelUiState) {
         Heading("Choose a date",18)
         CalendarCard(year,month,date,{
             date=it
+            time=""
         },{
             y,m->year=y
             month=m
             date=1
+            time=""
         })
         Heading("Available times · $date ${monthName(month)}",18)
         val calendar = Calendar.getInstance().apply {
@@ -61,9 +63,10 @@ internal fun ColumnScope.BookingScreen(state:JeelUiState) {
         }
         Info("Your request, thoughtfully considered","Your mentor will review your request. You'll be notified when they accept.")
         Info("Your selection","$date ${monthName(month)} $year · $time · 45 min\n$bookingTopic with ${selectedMentor.name}")
+        if (notice.isNotBlank()) Info("Booking update", notice)
         if (availableTimes.isNotEmpty() && time in availableTimes) {
-            Action(if(rescheduling) "Confirm reschedule" else "Confirm booking") {
-                go("confirmation")
+            Action(if(rescheduling) "Confirm reschedule" else "Confirm booking", enabled = !savingSession) {
+                if (useRoomSessions) submitBooking() else go("confirmation")
             }
         }
     }

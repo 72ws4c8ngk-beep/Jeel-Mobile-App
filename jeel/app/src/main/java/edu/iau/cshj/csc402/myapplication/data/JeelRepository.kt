@@ -34,6 +34,12 @@ class JeelRepository(private val dao: JeelDao) {
     suspend fun getSessionById(sessionId: Int): SessionEntity? = dao.getSessionById(sessionId)
     suspend fun updateSession(session: SessionEntity) = dao.updateSession(session)
 
+    suspend fun bookAvailableSession(session: SessionEntity, slotId: Int, weekday: String): Boolean =
+        dao.bookAvailableSession(session, slotId, weekday)
+
+    suspend fun respondToRequest(sessionId: Int, mentorId: Int, accepted: Boolean): Boolean =
+        dao.respondToPendingSession(sessionId, mentorId, if (accepted) "Accepted" else "Rejected") == 1
+
     // MENTOR AVAILABILITY
 
     suspend fun insertAvailability(availability: AvailabilityEntity): Long =

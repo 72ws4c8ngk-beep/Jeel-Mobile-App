@@ -21,6 +21,14 @@ import edu.iau.cshj.csc402.myapplication.ui.screens.mentor.*
 import edu.iau.cshj.csc402.myapplication.ui.screens.shared.*
 import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import java.util.Calendar
+import java.util.TimeZone
+import java.text.SimpleDateFormat
+import java.util.Locale
+import org.json.JSONObject
+import edu.iau.cshj.csc402.myapplication.data.local.SessionEntity
+import edu.iau.cshj.csc402.myapplication.state.SavedSession
 import edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity
 private fun timeToMinutes(time: String): Int? {
     return try {
@@ -146,6 +154,90 @@ fun JeelWorkspace(
         }
     }
 
+    LaunchedEffect(state, initialEmail, currentMentorId) {
+        if (!state.useRoomSessions) return@LaunchedEffect
+        state.savedSessions = emptyList()
+        val user = repository.getUserByEmail(initialEmail.trim().lowercase()) ?: return@LaunchedEffect
+        val sessions = if (state.isMentor) {
+            val id = currentMentorId ?: return@LaunchedEffect
+            repository.getSessionsByMentor(id)
+        } else {
+            repository.getSessionsByMentee(user.userId)
+        }
+        sessions.collect { entries ->
+            state.savedSessions = entries.map { entry ->
+                val person = if (state.isMentor) {
+                    repository.getUserById(entry.menteeId)?.fullName
+                } else {
+                    repository.getMentorById(entry.mentorId)?.let { mentor ->
+                        repository.getUserById(mentor.userId)?.fullName
+                    }
+                }
+                SavedSession(entry, person ?: if (state.isMentor) "Mentee" else "Mentor")
+            }
+        }
+    }
+
+    fun submitBooking() {
+        if (state.savingSession) return
+        val mentorId = state.selectedRoomMentorId ?: return
+        val timeZone = TimeZone.getTimeZone("Asia/Riyadh")
+        val calendar = Calendar.getInstance(timeZone).apply {
+            clear()
+            isLenient = false
+            set(state.year, state.month - 1, state.date)
+        }
+        val selectedDate = runCatching { calendar.time }.getOrNull()
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+            this.timeZone = timeZone
+        }
+        val date = selectedDate?.let { formatter.format(it) }
+        if (date == null || date < formatter.format(Calendar.getInstance(timeZone).time)) {
+            state.notice = "Choose today or a future date."
+            return
+        }
+        val weekday = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.ENGLISH)
+            ?: return
+        val slot = state.bookingAvailabilitySlots.firstOrNull {
+            it.mentorId == mentorId && it.dayOfWeek == weekday && it.startTime == state.time
+        } ?: return
+        val topic = state.bookingTopic
+        val notes = JSONObject().put("topic", topic).put("note", state.bookingNote).toString()
+        state.savingSession = true
+        scope.launch {
+            try {
+                val mentee = repository.getUserByEmail(initialEmail.trim().lowercase())
+                val saved = mentee != null && mentee.role == "Mentee" && repository.bookAvailableSession(
+                    SessionEntity(
+                        menteeId = mentee.userId,
+                        mentorId = mentorId,
+                        sessionDate = date,
+                        sessionTime = slot.startTime.trim(),
+                        notes = notes
+                    ),
+                    slot.availabilityId,
+                    weekday
+                )
+                if (state.route != "book") return@launch
+                if (saved) {
+                    state.sessionDate = date
+                    state.sessionTime = slot.startTime.trim()
+                    state.currentSession = topic
+                    state.bookingPending = true
+                    state.go("confirmation")
+                } else {
+                    state.notice = "This slot is no longer available. Choose another time."
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                state.notice = "Could not save the booking. Try again."
+            } finally {
+                state.savingSession = false
+            }
+        }
+    }
+
     LaunchedEffect(mentorProfiles) {
         state.mentorProfiles = mentorProfiles
     }
@@ -258,7 +350,7 @@ fun JeelWorkspace(
                                 "explore" -> ExploreScreen(state)
                                 "filters" -> FilterScreen(state)
                                 "mentor" -> MentorDetailScreen(state)
-                                "book" -> BookingScreen(state)
+                                "book" -> BookingScreen(state, ::submitBooking)
                                 "confirmation" -> BookingConfirmationScreen(state)
 
                                 "sessions" ->
@@ -315,10 +407,10 @@ fun JeelWorkspace(
                                     "Both participants will be notified. This appointment will leave your upcoming sessions."
 
                                 "accept" ->
-                                    "An upcoming Zoom session will be created for this mentorship."
+                                    "This request will appear in your upcoming sessions."
 
                                 "reject" ->
-                                    "The mentee will be notified of your decision."
+                                    "The mentee will see the updated status in My Sessions."
 
                                 "delete" ->
                                     "Mentees will no longer be able to book this available time. Existing bookings stay unchanged."
@@ -337,8 +429,33 @@ fun JeelWorkspace(
                                 when (confirmation) {
                                     "logout" -> logout()
                                     "cancel" -> tab("sessions")
-                                    "reject" -> tab("requests")
-                                    "accept" -> tab("sessions")
+                                    "reject", "accept" -> {
+                                        val accepted = confirmation == "accept"
+                                        val sessionId = selectedSessionId
+                                        val mentorId = currentMentorId
+                                        if (!useRoomSessions) {
+                                            tab(if (accepted) "sessions" else "requests")
+                                        } else if (!savingSession && sessionId != null && mentorId != null) {
+                                            savingSession = true
+                                            scope.launch {
+                                                try {
+                                                    if (repository.respondToRequest(sessionId, mentorId, accepted)) {
+                                                        requestTab = if (accepted) "Accepted" else "Rejected"
+                                                        sessionTab = "Upcoming"
+                                                        tab(if (accepted) "sessions" else "requests")
+                                                    } else {
+                                                        notice = "This request is no longer pending."
+                                                    }
+                                                } catch (error: CancellationException) {
+                                                    throw error
+                                                } catch (error: Exception) {
+                                                    notice = "Could not update the request. Try again."
+                                                } finally {
+                                                    savingSession = false
+                                                }
+                                            }
+                                        }
+                                    }
                                     "delete" -> {
                                         val mentorId = currentMentorId
                                         val slotId = deletingSlotId

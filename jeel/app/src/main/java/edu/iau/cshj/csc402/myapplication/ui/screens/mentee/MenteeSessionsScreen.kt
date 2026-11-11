@@ -20,6 +20,27 @@ internal fun ColumnScope.MenteeSessionsScreen(state:JeelUiState) {
             sessionTab=it
         }
         Heading(sessionTab,18)
+        if (useRoomSessions) {
+            val visible = savedSessions.filter { row ->
+                when (sessionTab) {
+                    "Completed" -> row.entity.status == "Completed"
+                    "Cancelled" -> row.entity.status == "Cancelled"
+                    else -> row.entity.status !in setOf("Completed", "Cancelled")
+                }
+            }
+            if (visible.isEmpty()) Info("No sessions", "Sessions for this tab will appear here.")
+            visible.forEach { row ->
+                val entry = row.entity
+                SessionCard(
+                    row.person, "Mentorship", row.topic, entry.status, R.drawable.jeel_omar,
+                    "${entry.sessionDate} · ${entry.sessionTime}"
+                ) {
+                    selectedSessionId = entry.sessionId
+                    go("session")
+                }
+            }
+            return
+        }
         when(sessionTab){
             "Upcoming"->{
                 if(!cancelled)SessionCard(if(bookingPending)sessionPerson else mentors[0].name,mentors[mentorIndex].job,if(bookingPending)currentSession else "Career roadmap",if(bookingPending)"Pending" else "Upcoming",mentors[mentorIndex].image,"$sessionDate · $sessionTime · 45 min"){

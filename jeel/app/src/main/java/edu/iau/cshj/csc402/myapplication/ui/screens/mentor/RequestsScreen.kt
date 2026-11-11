@@ -20,6 +20,22 @@ internal fun ColumnScope.RequestsScreen(state:JeelUiState) {
             requestTab=it
         }
         Heading(if(requestTab=="Pending")"Awaiting your response" else "$requestTab requests",18)
+        if (useRoomSessions) {
+            val requests = savedSessions.filter { it.entity.status == requestTab }
+            if (requests.isEmpty()) Info("No ${requestTab.lowercase()} requests", "Requests with this status will appear here.")
+            requests.forEach { row ->
+                Panel {
+                    Heading(row.person, 18)
+                    Badge(row.entity.status)
+                    SessionDetails(row.entity.sessionDate, row.entity.sessionTime, row.topic)
+                    Action("View request", secondary = true) {
+                        selectedSessionId = row.entity.sessionId
+                        go("request")
+                    }
+                }
+            }
+            return
+        }
         var visible=0
         listOf("Aisha Rahman","Yusuf Ali").forEachIndexed{
             i,p->if(requestStates[i]==requestTab){

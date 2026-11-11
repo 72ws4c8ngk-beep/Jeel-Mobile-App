@@ -8,5 +8,6 @@ data class MentorProfile(
     val yearsOfExperience: Int,
     val rating: Double,
     val bio: String,
-    val profileData: String
+    val profileData: String,
+    val hasAvailability: Boolean = false
 )

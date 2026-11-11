@@ -14,6 +14,22 @@ import edu.iau.cshj.csc402.myapplication.state.*
 @Composable
 internal fun ColumnScope.RequestDetailScreen(state:JeelUiState) {
     with(state){
+        if (useRoomSessions) {
+            val row = selectedSavedSession
+            PageHead("MENTORSHIP REQUEST", row?.person ?: "Request unavailable", ::back)
+            if (row == null) return
+            Panel {
+                Badge(row.entity.status)
+                SessionDetails(row.entity.sessionDate, row.entity.sessionTime, row.topic)
+                if (row.note.isNotBlank()) BodyText(row.note)
+            }
+            if (notice.isNotBlank()) Info("Request update", notice)
+            if (row.entity.status == "Pending" && !savingSession) {
+                Action("Accept request") { confirmation = "accept" }
+                DangerButton("Reject request") { confirmation = "reject" }
+            }
+            return
+        }
         PageHead("REQUESTS · ${requestStates[requesterIndex].uppercase()}","Meet ${requestPerson.substringBefore(' ')}",::back)
         Panel{
             Person(requestPerson,if(requesterIndex==0)"Final-year Computer Science student" else "Business graduate",if(requesterIndex==0)R.drawable.jeel_aisha else R.drawable.jeel_yusuf)

@@ -14,6 +14,17 @@ import edu.iau.cshj.csc402.myapplication.R
 internal fun ColumnScope.SessionDetailsScreen(state: JeelUiState) {
     with(state) {
         val preview=LocalUiScene.current.state
+        if (useRoomSessions && selectedSessionId != null) {
+            val row = selectedSavedSession
+            PageHead("SESSIONS", row?.person ?: "Session unavailable", ::back)
+            if (row == null) return
+            Panel {
+                Badge(row.entity.status)
+                SessionDetails(row.entity.sessionDate, row.entity.sessionTime, row.topic)
+                if (row.note.isNotBlank()) BodyText(row.note)
+            }
+            return
+        }
         val status=when {
             preview=="Completed"||mentorCompleted -> "Completed"
             preview=="Cancelled"||cancelled -> "Cancelled"

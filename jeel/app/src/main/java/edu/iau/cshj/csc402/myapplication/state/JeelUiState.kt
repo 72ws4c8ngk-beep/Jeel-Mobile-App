@@ -8,6 +8,15 @@ import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
 import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
 import org.json.JSONObject
+import java.util.Calendar
+import java.util.TimeZone
+import edu.iau.cshj.csc402.myapplication.data.local.SessionEntity
+
+internal data class SavedSession(val entity: SessionEntity, val person: String) {
+    private val bookingDetails = runCatching { JSONObject(entity.notes) }.getOrNull()
+    val topic: String get() = bookingDetails?.optString("topic", "Mentorship") ?: "Mentorship"
+    val note: String get() = bookingDetails?.optString("note") ?: entity.notes
+}
 
 
 @Stable
@@ -18,6 +27,12 @@ initialEmail:String,
 initialRoute:String="home",
 initialProfile:Map<String,String> = emptyMap()
 ) {
+    val useRoomSessions = initialEmail.isNotBlank()
+    var savedSessions by mutableStateOf<List<SavedSession>>(emptyList())
+    var selectedSessionId by mutableStateOf<Int?>(null)
+    val selectedSavedSession get() = savedSessions.firstOrNull { it.entity.sessionId == selectedSessionId }
+    var savingSession by mutableStateOf(false)
+
     var role by mutableStateOf(initialRole)
     val isMentor get() = role == "Mentor"
     var route by mutableStateOf(initialRoute)
@@ -119,6 +134,15 @@ initialProfile:Map<String,String> = emptyMap()
     val roots=listOf("home","explore","sessions","progress","profile","requests")
     fun go(next:String){
         if(next=="editProfile")editSnapshot=listOf(name,email,location,study,university,careerGoal,bio,professionalTitle,years,interests.joinToString("|"),skills.joinToString("|"),topics.joinToString("|"),expertise.joinToString("|"),photo.toString(),industry)
+        if (next == "book" && useRoomSessions) {
+            val today = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"))
+            year = today.get(Calendar.YEAR)
+            month = today.get(Calendar.MONTH) + 1
+            date = today.get(Calendar.DAY_OF_MONTH)
+            time = ""
+            rescheduling = false
+            bookingNote = ""
+        }
         history=history+route
         route=next
         notice=""
@@ -164,6 +188,7 @@ initialProfile:Map<String,String> = emptyMap()
         go("mentor")
     }
     fun session(person:String,topic:String){
+        selectedSessionId = null
         sessionPerson=person
         currentSession=topic
         val index=mentors.indexOfFirst{
