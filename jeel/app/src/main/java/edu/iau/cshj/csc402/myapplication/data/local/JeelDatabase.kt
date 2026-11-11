@@ -15,7 +15,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SessionEntity::class,
         AvailabilityEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class JeelDatabase : RoomDatabase() {
@@ -80,6 +80,13 @@ abstract class JeelDatabase : RoomDatabase() {
             }
         }
 
+        internal val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sessions ADD COLUMN rating INTEGER")
+                db.execSQL("ALTER TABLE sessions ADD COLUMN feedback TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun getDatabase(context: Context): JeelDatabase {
 
             return INSTANCE ?: synchronized(this) {
@@ -92,7 +99,8 @@ abstract class JeelDatabase : RoomDatabase() {
                     .addMigrations(
                         MIGRATION_1_2,
                         MIGRATION_2_3,
-                        MIGRATION_3_4
+                        MIGRATION_3_4,
+                        MIGRATION_4_5
                     )
                     .build()
                     .also { INSTANCE = it }

@@ -43,6 +43,17 @@ class JeelRepository(private val dao: JeelDao) {
     suspend fun getSessionById(sessionId: Int): SessionEntity? = dao.getSessionById(sessionId)
     suspend fun updateSession(session: SessionEntity) = dao.updateSession(session)
 
+    suspend fun completeSession(id: Int, mentorId: Int): Boolean =
+        dao.completeSession(id, mentorId) == 1
+
+    suspend fun cancelSession(id: Int, menteeId: Int?, mentorId: Int?): Boolean =
+        dao.cancelSession(id, menteeId, mentorId) == 1
+
+    suspend fun submitReview(id: Int, menteeId: Int, rating: Int, feedback: String): Boolean {
+        require(rating in 1..5) { "Select a rating from 1 to 5." }
+        return dao.submitReview(id, menteeId, rating, feedback.trim()) == 1
+    }
+
     // MENTOR AVAILABILITY
 
     suspend fun insertAvailability(availability: AvailabilityEntity): Long =

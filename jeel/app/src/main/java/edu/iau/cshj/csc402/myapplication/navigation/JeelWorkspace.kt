@@ -218,6 +218,39 @@ fun JeelWorkspace(
             }
         }
     }
+    fun saveSessionChange(action: suspend () -> Boolean, onSuccess: () -> Unit) {
+        if (state.sessionSaving) return
+        state.sessionSaving = true
+        scope.launch {
+            try {
+                if (action()) onSuccess()
+                else state.notice = "This session has changed. Please reopen it and try again."
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                state.notice = "Could not save your changes. Please try again."
+            } finally {
+                state.sessionSaving = false
+            }
+        }
+    }
+    state.completeSelectedSession = {
+        val id = state.selectedSessionId
+        val mentorId = currentMentorId
+        if (mentorId != null) saveSessionChange(
+            { repository.completeSession(id, mentorId) },
+            { state.sessionTab = "Completed"; state.tab("sessions") }
+        )
+    }
+    state.submitSelectedReview = {
+        val id = state.selectedSessionId
+        val menteeId = currentMenteeId
+        val stars = state.rating
+        val text = state.feedback
+        if (menteeId != null && stars in 1..5) saveSessionChange(
+            { repository.submitReview(id, menteeId, stars, text) },
+            { state.sessionTab = "Completed"; state.tab("sessions") }
+        )
+    }
     with(state) {
         BackHandler {
             back()
@@ -296,6 +329,7 @@ fun JeelWorkspace(
                             ),
                         verticalArrangement = Arrangement.spacedBy(22.dp)
                     ) {
+                        if (notice.isNotBlank()) Text(notice, color = MaterialTheme.colorScheme.error)
                         UiStatePresentation {
                             when (route) {
                                 "home" ->
@@ -424,7 +458,15 @@ fun JeelWorkspace(
                             onClick = {
                                 when (confirmation) {
                                     "logout" -> logout()
-                                    "cancel" -> tab("sessions")
+                                    "cancel" -> {
+                                        val id = selectedSessionId
+                                        val menteeId = currentMenteeId
+                                        val mentorId = currentMentorId
+                                        saveSessionChange(
+                                            { repository.cancelSession(id, menteeId, mentorId) },
+                                            { sessionTab = "Cancelled"; tab("sessions") }
+                                        )
+                                    }
                                     "reject", "accept" -> {
                                         val requestId = selectedRequestId
                                         val mentorId = currentMentorId
