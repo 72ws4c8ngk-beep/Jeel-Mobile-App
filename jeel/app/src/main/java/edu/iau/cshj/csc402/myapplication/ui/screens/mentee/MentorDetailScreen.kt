@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.sp
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 import edu.iau.cshj.csc402.myapplication.data.*
 import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
@@ -38,19 +41,47 @@ internal fun ColumnScope.MentorDetailScreen(state:JeelUiState) {
         }
         Heading("What mentees say · 64 reviews",18)
         if(LocalUiScene.current.state=="No reviews") Info("No reviews yet","Be the first to share your experience after a session.") else ReviewCard()
-        val hasAvailableSlots = bookingAvailabilitySlots.isNotEmpty()
-        Heading("Available dates",18)
-        if(LocalUiScene.current.state!="No availability") Chips(listOf("Sun, 18 Oct","Sun, 25 Oct","Sun, 1 Nov"),""){
-            date=if(it.contains("25"))25 else if(it.contains("1 Nov"))1 else 18
-            month=if(it.contains("Nov"))11 else 10
+        val days = bookingAvailabilitySlots
+            .filter { it.mentorId == selectedRoomMentorId }
+            .map { it.dayOfWeek }
+            .toSet()
+        val dates = buildList {
+            val calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"))
+            repeat(21) {
+                val weekday = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.ENGLISH)
+                if (weekday in days && size < 3) {
+                    add(calendar.clone() as Calendar)
+                }
+                calendar.add(Calendar.DAY_OF_MONTH, 1)
+            }
         }
-        Caption("45 min Zoom sessions · English · Arabia Standard Time (UTC+3)")
+        val labels = dates.map { day ->
+            val weekday = day.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.ENGLISH)
+            "$weekday, ${day.get(Calendar.DAY_OF_MONTH)} ${monthName(day.get(Calendar.MONTH) + 1)}"
+        }
+        var selectedLabel by remember(selectedRoomMentorId) { mutableStateOf("") }
+        val selectedDate = dates.getOrNull(labels.indexOf(selectedLabel)) ?: dates.firstOrNull()
+
+        Heading("Available dates",18)
+        if (dates.isNotEmpty()) {
+            Chips(labels, selectedLabel.takeIf { it in labels } ?: labels.first()) {
+                selectedLabel = it
+            }
+        } else {
+            Info("No available dates", "This mentor has not added available times yet.")
+        }
+        Caption("Arabia Standard Time (UTC+3)")
         Action(
-            if (hasAvailableSlots) "Book session" else "No available slots",
-            enabled = hasAvailableSlots
+            if (selectedDate != null) "Book session" else "No available slots",
+            enabled = selectedDate != null
         ) {
+            val day = selectedDate ?: return@Action
             rescheduling = false
             go("book")
+            year = day.get(Calendar.YEAR)
+            month = day.get(Calendar.MONTH) + 1
+            date = day.get(Calendar.DAY_OF_MONTH)
+            time = ""
         }
     }
 }

@@ -118,7 +118,7 @@ internal fun ColumnScope.AvailabilityScreen(state: JeelUiState) {
                 slotText = "3:00 PM"
                 slotEndText = "3:45 PM"
                 slotDialog = true
-                notice = "Add button clicked"
+                notice = ""
             }
 
         } else {
@@ -133,8 +133,19 @@ internal fun ColumnScope.AvailabilityScreen(state: JeelUiState) {
             "Weekly availability changes apply only to new requests. Reschedule or cancel a booked session from its details."
         )
 
+        var showSaveConfirmation by remember(availabilitySlots, availableDays) {
+            mutableStateOf(false)
+        }
         Action("Save availability") {
-            // Persistence will be connected in JeelWorkspace.
+            showSaveConfirmation = true
+        }
+        if (showSaveConfirmation) {
+            val hasSavedSlots = availabilitySlots.isNotEmpty()
+            Info(
+                if (hasSavedSlots) "Availability saved" else "No time slots saved",
+                if (hasSavedSlots) "Your saved time slots repeat weekly."
+                else "Add a time slot and tap Save to make it available for booking."
+            )
         }
     }
 }

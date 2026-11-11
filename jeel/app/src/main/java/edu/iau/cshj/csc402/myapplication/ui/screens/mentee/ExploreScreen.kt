@@ -19,7 +19,7 @@ internal fun ColumnScope.ExploreScreen(state:JeelUiState) {
         SearchBox(query){
             query=it
         }
-        Section("${filteredRoomMentors().size} mentors available","☷ Filter"){
+        Section("${filteredRoomMentors().size} mentors found","☷ Filter"){
             go("filters")
         }
         Chips(listOf("All expertise","Product","Design","Data"),filterArea){
