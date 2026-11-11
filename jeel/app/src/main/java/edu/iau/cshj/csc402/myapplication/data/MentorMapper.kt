@@ -11,13 +11,13 @@ internal fun MentorProfile.toDisplayMentor(): Mentor {
     }.getOrNull()
 
     val topics = details?.optString("topics").orEmpty()
-        .split(",")
+        .split("|", ",")
         .map { it.trim() }
         .filter { it.isNotEmpty() }
 
     return Mentor(
         name = fullName,
-        job = details?.optString("jobTitle")
+        job = details?.optString("job")?.ifBlank { details.optString("jobTitle") }
             ?.ifBlank { "Mentor" } ?: "Mentor",
         area = specialization,
         years = yearsOfExperience,

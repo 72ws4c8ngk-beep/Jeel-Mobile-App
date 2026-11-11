@@ -13,9 +13,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         UserEntity::class,
         MentorEntity::class,
         SessionEntity::class,
-        AvailabilityEntity::class
+        AvailabilityEntity::class,
+        NotificationReadEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class JeelDatabase : RoomDatabase() {
@@ -87,6 +88,12 @@ abstract class JeelDatabase : RoomDatabase() {
             }
         }
 
+        internal val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS notification_reads (userId INTEGER NOT NULL, eventKey TEXT NOT NULL, PRIMARY KEY(userId, eventKey), FOREIGN KEY(userId) REFERENCES users(userId) ON UPDATE NO ACTION ON DELETE CASCADE)")
+            }
+        }
+
         fun getDatabase(context: Context): JeelDatabase {
 
             return INSTANCE ?: synchronized(this) {
@@ -100,7 +107,8 @@ abstract class JeelDatabase : RoomDatabase() {
                         MIGRATION_1_2,
                         MIGRATION_2_3,
                         MIGRATION_3_4,
-                        MIGRATION_4_5
+                        MIGRATION_4_5,
+                        MIGRATION_5_6
                     )
                     .build()
                     .also { INSTANCE = it }

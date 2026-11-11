@@ -124,4 +124,53 @@ class JeelRepositoryPersistenceTest {
         openDatabase()
         assertTrue(repository.getSessionsByMentee(mentee).first().all { it.status == "Cancelled" })
     }
+
+    @Test fun profilesForBothRolesPersistAndValidateUniqueEmail() = runBlocking {
+        val student = repository.insertUser(UserEntity(fullName = "Student", email = "student@profile.example", role = "Mentee", passwordHash = "keep-hash", passwordSalt = "keep-salt")).toInt()
+        val guide = repository.insertUser(UserEntity(fullName = "Guide", email = "guide@profile.example", role = "Mentor")).toInt()
+        val mentor = repository.insertMentor(MentorEntity(userId = guide, specialization = "Old field")).toInt()
+        val values = mapOf("age" to "30", "location" to "Riyadh", "bio" to "Updated bio", "study" to "Computer Science", "years" to "8", "specialization" to "Android")
+        repository.saveProfile(student, " Updated Student ", "newstudent@profile.example", values)
+        repository.saveProfile(guide, "Updated Guide", "newguide@profile.example", values)
+        try { repository.saveProfile(student, "Name", "newguide@profile.example", values); fail("Duplicate email") }
+        catch (expected: IllegalArgumentException) { }
+        try { repository.saveProfile(student, "", "bad", values); fail("Invalid profile") }
+        catch (expected: IllegalArgumentException) { }
+        database.close(); openDatabase()
+        val savedStudent = repository.getUserById(student)!!
+        assertEquals("Updated Student", savedStudent.fullName)
+        assertEquals("newstudent@profile.example", savedStudent.email)
+        assertEquals("keep-hash", savedStudent.passwordHash)
+        assertEquals("keep-salt", savedStudent.passwordSalt)
+        assertEquals("Riyadh", org.json.JSONObject(savedStudent.profileData).getString("location"))
+        assertEquals("Updated Guide", repository.getUserById(guide)!!.fullName)
+        assertEquals("Android", repository.getMentorById(mentor)!!.specialization)
+        assertEquals(8, repository.getMentorById(mentor)!!.yearsOfExperience)
+    }
+
+    @Test fun notificationReadsPersistAndStayPrivateToEachAccount() = runBlocking {
+        val student = repository.insertUser(UserEntity(fullName = "Student", email = "student@notify.example", role = "Mentee")).toInt()
+        val guide = repository.insertUser(UserEntity(fullName = "Guide", email = "guide@notify.example", role = "Mentor")).toInt()
+        repository.markNotificationsRead(student, listOf("1:Pending:0", "1:Pending:0"))
+        assertEquals(listOf("1:Pending:0"), repository.observeReadNotifications(student).first())
+        assertTrue(repository.observeReadNotifications(guide).first().isEmpty())
+        database.close(); openDatabase()
+        assertEquals(listOf("1:Pending:0"), repository.observeReadNotifications(student).first())
+        assertFalse("1:Completed:0" in repository.observeReadNotifications(student).first())
+    }
+
+    @Test fun notificationMigrationPreservesExistingUsersAndSessions() = runBlocking {
+        val user = repository.insertUser(UserEntity(fullName = "Existing", email = "existing@migration.example", role = "Mentee")).toInt()
+        database.close()
+        context.openOrCreateDatabase(databaseName, 0, null).use { old ->
+            old.execSQL("DROP TABLE notification_reads")
+            old.version = 5
+        }
+        database = Room.databaseBuilder(context, JeelDatabase::class.java, databaseName)
+            .addMigrations(JeelDatabase.MIGRATION_5_6).build()
+        repository = JeelRepository(database.jeelDao())
+        assertEquals("Existing", repository.getUserById(user)!!.fullName)
+        repository.markNotificationsRead(user, listOf("migration:test"))
+        assertEquals(listOf("migration:test"), repository.observeReadNotifications(user).first())
+    }
 }

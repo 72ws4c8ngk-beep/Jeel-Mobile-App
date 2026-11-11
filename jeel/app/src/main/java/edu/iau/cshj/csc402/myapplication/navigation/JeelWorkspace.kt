@@ -49,6 +49,7 @@ fun JeelWorkspace(
     initialRoute: String = "home",
     initialProfile: Map<String, String> = emptyMap(),
     mentorProfiles: List<MentorProfile> = emptyList(),
+    onProfileSaved: (String, String, Map<String, String>) -> Unit = { _, _, _ -> },
     logout: () -> Unit
 ) {
     val scene = LocalUiScene.current
@@ -160,6 +161,55 @@ fun JeelWorkspace(
                 "Confirm deletion" -> confirmation = "delete"
                 "Confirm logout" -> confirmation = "logout"
                 "Discard changes" -> confirmation = "discard"
+            }
+        }
+    }
+    var currentUserId by remember(initialEmail) { mutableStateOf<Int?>(null) }
+    LaunchedEffect(initialEmail, initialRole) {
+        currentUserId = repository.getUserByEmail(initialEmail.trim().lowercase())?.takeIf { it.role == initialRole }?.userId
+    }
+    LaunchedEffect(currentUserId, state) {
+        val id = currentUserId ?: return@LaunchedEffect
+        repository.observeUser(id).collect { user ->
+            if (user != null) {
+                val json = runCatching { org.json.JSONObject(user.profileData) }.getOrDefault(org.json.JSONObject())
+                val values = json.keys().asSequence().associateWith { json.optString(it) }
+                state.applyProfile(values, user.fullName, user.email)
+            }
+        }
+    }
+    LaunchedEffect(currentUserId, state) {
+        val id = currentUserId ?: return@LaunchedEffect
+        repository.observeReadNotifications(id).collect { state.readNotificationKeys = it }
+    }
+    state.markNotificationsRead = { keys ->
+        currentUserId?.let { id -> scope.launch {
+            try { repository.markNotificationsRead(id, keys) }
+            catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                state.notice = "Unable to mark notifications as read. Please try again."
+            }
+        } }
+    }
+    state.saveProfile = { draft ->
+        val id = currentUserId
+        if (id != null && !state.profileSaving) {
+            val values = draft.profileValues()
+            val fullName = draft.name
+            val accountEmail = draft.email
+            state.profileSaving = true
+            scope.launch {
+                try {
+                    repository.saveProfile(id, fullName, accountEmail, values)
+                    state.applyProfile(values, fullName.trim(), accountEmail.trim().lowercase())
+                    onProfileSaved(fullName.trim(), accountEmail.trim().lowercase(), values)
+                    state.editSnapshot = emptyList()
+                    state.tab("profile")
+                    state.notice = "Profile saved."
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    state.notice = if (e is IllegalArgumentException) e.message.orEmpty() else "Unable to save profile. Please try again."
+                } finally { state.profileSaving = false }
             }
         }
     }

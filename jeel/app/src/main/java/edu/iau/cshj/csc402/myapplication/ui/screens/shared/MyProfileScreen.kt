@@ -15,8 +15,11 @@ internal fun ColumnScope.MyProfileScreen(state: JeelUiState) {
         PageHead("JEEL · "+role.uppercase(), "Your profile")
         ProfileHero(name, if(isMentor) professionalTitle+" · "+industry else studyStage+" · "+study, photo, if(isMentor) "Verified mentor" else "Mentee")
         Action("Edit Profile", secondary=true) { go("editProfile") }
+        Action("Notifications", secondary=true) { go("notifications") }
         if(isMentor) {
-            Stats(listOf(years to "Years of experience", "4.9" to "64 reviews", "112" to "Sessions guided"))
+            val reviews = mentorSessions.filter { it.rating != null }
+            val average = if(reviews.isEmpty()) "—" else "%.1f".format(reviews.mapNotNull { it.rating }.average())
+            Stats(listOf(years to "Years of experience", average to "Average rating", mentorSessions.count { it.status == "Completed" }.toString() to "Sessions guided"))
             Heading("Professional bio",18)
             BodyText(bio)
             Heading("Expertise & skills",18)
@@ -24,7 +27,11 @@ internal fun ColumnScope.MyProfileScreen(state: JeelUiState) {
             Heading("Mentorship topics",18)
             Labels(topics)
             Heading("Latest review",18)
-            ReviewCard()
+            val latest = mentorSessions.lastOrNull { it.rating != null }
+            if (latest == null) Caption("No reviews yet") else Panel {
+                BodyText("${latest.rating} out of 5 stars")
+                BodyText(latest.feedback)
+            }
         }
         Heading("Personal information",18)
         Panel {
