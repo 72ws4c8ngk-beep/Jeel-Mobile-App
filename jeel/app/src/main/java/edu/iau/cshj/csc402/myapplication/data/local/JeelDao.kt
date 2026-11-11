@@ -47,7 +47,8 @@ interface JeelDao {
         m.yearsOfExperience,
         m.rating,
         u.bio,
-        u.profileData
+        u.profileData,
+        EXISTS(SELECT 1 FROM availability AS a WHERE a.mentorId = m.mentorId) AS hasAvailability
     FROM mentors AS m
     INNER JOIN users AS u ON m.userId = u.userId
     """)

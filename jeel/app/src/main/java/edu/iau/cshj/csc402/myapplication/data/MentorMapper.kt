@@ -25,6 +25,6 @@ internal fun MentorProfile.toDisplayMentor(): Mentor {
         image = details?.optString("photo")
             ?.toIntOrNull() ?: R.drawable.jeel_omar,
         tags = topics,
-        available = false
+        available = hasAvailability
     )
 }
