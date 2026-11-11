@@ -58,6 +58,35 @@ initialProfile:Map<String,String> = emptyMap()
         go("session")
     }
 
+    var profileSaving by mutableStateOf(false)
+    var saveProfile: (JeelUiState) -> Unit = {}
+    var readNotificationKeys by mutableStateOf<List<String>>(emptyList())
+    var markNotificationsRead: (List<String>) -> Unit = {}
+    fun notificationKey(booking: SessionEntity) = "${booking.sessionId}:${booking.status}:${booking.rating ?: 0}"
+    val notificationSessions get() = (if (isMentor) mentorSessions else menteeSessions).sortedByDescending { it.sessionId }
+
+    fun profileValues(): Map<String, String> = mapOf(
+        "age" to age, "location" to location, "stage" to studyStage, "study" to study,
+        "university" to university, "goal" to careerGoal, "bio" to bio, "industry" to industry,
+        "job" to professionalTitle, "years" to years, "skills" to skills.joinToString("|"),
+        "interests" to interests.joinToString("|"), "topics" to topics.joinToString("|"),
+        "expertise" to expertise.joinToString("|"), "photo" to photo.toString(),
+        "specialization" to expertise.firstOrNull().orEmpty()
+    )
+
+    fun applyProfile(values: Map<String, String>, fullName: String, accountEmail: String) {
+        name = fullName; email = accountEmail
+        age = values["age"] ?: age; location = values["location"] ?: location
+        studyStage = values["stage"] ?: values["studyStage"] ?: studyStage; study = values["study"] ?: values["fieldOfStudy"] ?: study
+        university = values["university"] ?: university; careerGoal = values["goal"] ?: careerGoal
+        bio = values["bio"] ?: values["description"] ?: bio; industry = values["industry"] ?: industry
+        professionalTitle = values["job"] ?: values["jobTitle"] ?: professionalTitle; years = values["years"] ?: Regex("\\d+").find(values["experience"].orEmpty())?.value ?: years
+        fun tags(key: String, fallback: List<String>) = values[key]?.split("|", ",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: fallback
+        skills = tags("skills", skills); interests = tags("interests", interests)
+        topics = tags("topics", topics); expertise = tags("expertise", tags("skills", expertise))
+        photo = values["photo"]?.toIntOrNull()?.takeIf { it in listOf(R.drawable.jeel_aisha, R.drawable.jeel_omar, R.drawable.jeel_leila) } ?: photo
+    }
+
     var savedMentors by mutableStateOf(listOf<Int>())
     var name by mutableStateOf(initialName.ifBlank {
         if(isMentor) "Dr. Omar Haddad" else "Aisha Rahman"

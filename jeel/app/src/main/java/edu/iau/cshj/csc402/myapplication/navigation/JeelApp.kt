@@ -150,6 +150,11 @@ fun JeelApp() {
                     initialEmail = email,
                     initialProfile = onboardingProfile,
                     mentorProfiles = mentorProfiles,
+                    onProfileSaved = { savedName, savedEmail, profile ->
+                        fullName = savedName
+                        email = savedEmail
+                        onboardingProfile = HashMap(profile)
+                    },
                     logout = {
                         go("welcome")
                     }

@@ -12,6 +12,31 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface JeelDao {
 
+    @Query("SELECT * FROM users WHERE userId = :userId")
+    fun observeUser(userId: Int): Flow<UserEntity?>
+
+    @Query("SELECT eventKey FROM notification_reads WHERE userId = :userId")
+    fun observeReadNotifications(userId: Int): Flow<List<String>>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun markNotificationsRead(reads: List<NotificationReadEntity>)
+
+    @androidx.room.Transaction
+    suspend fun saveProfile(user: UserEntity, mentor: MentorEntity?) {
+        updateUser(user)
+        if (mentor != null) updateMentor(mentor)
+    }
+
+    @Query("UPDATE mentors SET rating = COALESCE((SELECT AVG(rating) FROM sessions WHERE mentorId = :mentorId AND rating IS NOT NULL), 0.0) WHERE mentorId = :mentorId")
+    suspend fun refreshMentorRating(mentorId: Int)
+
+    @androidx.room.Transaction
+    suspend fun saveReview(id: Int, menteeId: Int, rating: Int, feedback: String): Int {
+        val updated = submitReview(id, menteeId, rating, feedback)
+        if (updated == 1) getSessionById(id)?.let { refreshMentorRating(it.mentorId) }
+        return updated
+    }
+
     // USERS
 
     @Insert(onConflict = OnConflictStrategy.ABORT)

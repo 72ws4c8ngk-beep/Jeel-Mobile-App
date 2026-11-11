@@ -16,7 +16,7 @@ import edu.iau.cshj.csc402.myapplication.state.*
 
 @Composable
 internal fun ColumnScope.MentorEditProfileScreen(state:JeelUiState) {
-    val draft=remember { JeelUiState(state.role,"","") }
+    val draft=remember(state) { JeelUiState(state.role,state.name,state.email).apply { applyProfile(state.profileValues(), state.name, state.email) } }
     with(draft){
         PageHead("EDIT PROFILE · MENTOR","Your experience, their possibility",state::back)
         ProfileHero(name,professionalTitle,photo,"Editing your ${role.lowercase()} profile")
@@ -69,8 +69,8 @@ internal fun ColumnScope.MentorEditProfileScreen(state:JeelUiState) {
         }
         Caption("Online mentorship · 45 min sessions")
         Info("A profile that grows with you","Keep your interests, skills and goals current so your mentor can guide your next step.")
-        Action("Save changes"){
-            state.back()
+        Action(if(state.profileSaving) "Saving..." else "Save changes", enabled=!state.profileSaving){
+            state.saveProfile(draft)
         }
         Action("Discard changes",secondary=true){
             state.confirmation="discard"
