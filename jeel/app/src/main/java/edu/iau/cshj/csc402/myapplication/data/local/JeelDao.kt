@@ -12,6 +12,32 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface JeelDao {
 
+    @androidx.room.Transaction
+    @Query("SELECT * FROM goals WHERE menteeId = :menteeId ORDER BY createdAt DESC, goalId DESC")
+    fun observeGoals(menteeId: Int): Flow<List<GoalWithActions>>
+
+    @Insert
+    suspend fun insertGoal(goal: GoalEntity)
+
+    @Insert
+    suspend fun insertAction(action: ActionItemEntity)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM goals WHERE goalId = :goalId AND menteeId = :menteeId)")
+    suspend fun ownsGoal(menteeId: Int, goalId: Int): Boolean
+
+    @androidx.room.Transaction
+    suspend fun addActionForMentee(menteeId: Int, goalId: Int, title: String): Boolean {
+        if (!ownsGoal(menteeId, goalId)) return false
+        insertAction(ActionItemEntity(goalId = goalId, title = title))
+        return true
+    }
+
+    @Query("""
+        UPDATE action_items SET isCompleted = :completed
+        WHERE actionId = :actionId AND goalId IN (SELECT goalId FROM goals WHERE menteeId = :menteeId)
+    """)
+    suspend fun setActionCompleted(menteeId: Int, actionId: Int, completed: Boolean): Int
+
     @Query("SELECT * FROM users WHERE userId = :userId")
     fun observeUser(userId: Int): Flow<UserEntity?>
 

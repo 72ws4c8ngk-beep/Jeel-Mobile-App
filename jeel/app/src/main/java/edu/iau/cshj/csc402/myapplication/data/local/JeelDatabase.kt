@@ -14,9 +14,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         MentorEntity::class,
         SessionEntity::class,
         AvailabilityEntity::class,
-        NotificationReadEntity::class
+        NotificationReadEntity::class,
+        GoalEntity::class,
+        ActionItemEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class JeelDatabase : RoomDatabase() {
@@ -94,6 +96,32 @@ abstract class JeelDatabase : RoomDatabase() {
             }
         }
 
+        internal val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE goals (
+                        goalId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        menteeId INTEGER NOT NULL,
+                        title TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        FOREIGN KEY(menteeId) REFERENCES users(userId) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX index_goals_menteeId ON goals(menteeId)")
+                db.execSQL("""
+                    CREATE TABLE action_items (
+                        actionId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        goalId INTEGER NOT NULL,
+                        title TEXT NOT NULL,
+                        isCompleted INTEGER NOT NULL,
+                        FOREIGN KEY(goalId) REFERENCES goals(goalId) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX index_action_items_goalId ON action_items(goalId)")
+            }
+        }
+
         fun getDatabase(context: Context): JeelDatabase {
 
             return INSTANCE ?: synchronized(this) {
@@ -108,7 +136,8 @@ abstract class JeelDatabase : RoomDatabase() {
                         MIGRATION_2_3,
                         MIGRATION_3_4,
                         MIGRATION_4_5,
-                        MIGRATION_5_6
+                        MIGRATION_5_6,
+                        MIGRATION_6_7
                     )
                     .build()
                     .also { INSTANCE = it }

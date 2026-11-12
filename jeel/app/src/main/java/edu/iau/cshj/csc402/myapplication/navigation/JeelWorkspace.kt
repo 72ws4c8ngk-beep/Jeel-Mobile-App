@@ -442,7 +442,11 @@ fun JeelWorkspace(
                                 "requests" -> RequestsScreen(state)
                                 "request" -> RequestDetailScreen(state)
                                 "availability" -> AvailabilityScreen(state)
-                                "progress" -> ProgressScreen(state)
+                                "progress" -> ProgressScreen(
+                                    repository,
+                                    currentUserId.takeIf { initialRole == "Mentee" },
+                                    menteeSessions
+                                )
                                 "profile" -> MyProfileScreen(state)
 
                                 "editProfile" ->
@@ -732,39 +736,6 @@ fun JeelWorkspace(
                 )
             }
 
-            if (addGoalDialog) {
-                AlertDialog(
-                    onDismissRequest = {
-                        addGoalDialog = false
-                    },
-                    title = {
-                        Text("Add learning goal")
-                    },
-                    text = {
-                        EditBox("Goal title", newGoal) {
-                            newGoal = it
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                addGoalDialog = false
-                            }
-                        ) {
-                            Text("Add")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                addGoalDialog = false
-                            }
-                        ) {
-                            Text("Cancel")
-                        }
-                    }
-                )
-            }
         }
     }
 }
