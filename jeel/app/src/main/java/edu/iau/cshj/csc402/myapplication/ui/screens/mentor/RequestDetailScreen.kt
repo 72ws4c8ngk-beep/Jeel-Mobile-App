@@ -5,6 +5,8 @@ import edu.iau.cshj.csc402.myapplication.navigation.JeelWorkspace
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import org.json.JSONException
+import org.json.JSONObject
 import edu.iau.cshj.csc402.myapplication.R
 import edu.iau.cshj.csc402.myapplication.data.*
 import edu.iau.cshj.csc402.myapplication.ui.components.*
@@ -31,6 +33,16 @@ internal fun ColumnScope.RequestDetailScreen(state:JeelUiState) {
 
             return@with
         }
+        val rawNotes = selectedSession.notes
+        val bookingDetails = try {
+            JSONObject(rawNotes)
+        } catch (_: JSONException) {
+            null
+        }
+        val topic = (bookingDetails?.opt("topic") as? String)?.trim()
+        val bookingNote = if (bookingDetails == null) rawNotes.trim()
+            else (bookingDetails.opt("note") as? String)?.trim().orEmpty()
+
         PageHead(
             "REQUESTS · ${selectedSession?.status?.uppercase() ?: "NOT FOUND"}",
             "Meet ${requestPerson.substringBefore(' ')}",
@@ -62,16 +74,13 @@ internal fun ColumnScope.RequestDetailScreen(state:JeelUiState) {
             SessionDetails(
                 selectedSession?.sessionDate ?: "Date unavailable",
                 selectedSession?.sessionTime ?: "Time unavailable",
-                "Mentorship session"
+                topic?.takeIf { it.isNotEmpty() } ?: "Mentorship session"
             )
             Detail("▣","Format","Zoom session · English")
         }
-        Heading("Booking notes", 18)
-        Panel {
-            BodyText(
-                selectedSession?.notes?.takeIf { it.isNotBlank() }
-                    ?: "No notes provided."
-            )
+        if (bookingNote.isNotEmpty()) {
+            Heading("Booking notes", 18)
+            Panel { BodyText(bookingNote) }
         }
         if (selectedSession?.status == "Pending") {
             Action("✓ Accept request"){

@@ -2,6 +2,7 @@
 package edu.iau.cshj.csc402.myapplication.data
 
 import android.content.Context
+import edu.iau.cshj.csc402.myapplication.data.local.GoalEntity
 import edu.iau.cshj.csc402.myapplication.data.local.JeelDao
 import edu.iau.cshj.csc402.myapplication.data.local.JeelDatabase
 import edu.iau.cshj.csc402.myapplication.data.local.MentorEntity
@@ -13,6 +14,25 @@ import kotlinx.coroutines.flow.Flow
 
 /** Local persistence boundary. Suspend operations must be called from a coroutine. */
 class JeelRepository(private val dao: JeelDao) {
+
+    fun observeGoals(menteeId: Int) = dao.observeGoals(menteeId)
+
+    suspend fun addGoal(menteeId: Int, title: String, description: String): Boolean {
+        if (title.isBlank() || dao.getUserById(menteeId)?.role != "Mentee") return false
+        dao.insertGoal(GoalEntity(
+            menteeId = menteeId,
+            title = title.trim(),
+            description = description.trim(),
+            createdAt = System.currentTimeMillis()
+        ))
+        return true
+    }
+
+    suspend fun addAction(menteeId: Int, goalId: Int, title: String): Boolean =
+        title.isNotBlank() && dao.addActionForMentee(menteeId, goalId, title.trim())
+
+    suspend fun setActionCompleted(menteeId: Int, actionId: Int, completed: Boolean): Boolean =
+        dao.setActionCompleted(menteeId, actionId, completed) == 1
 
     fun observeUser(id: Int) = dao.observeUser(id)
     fun observeReadNotifications(id: Int) = dao.observeReadNotifications(id)
