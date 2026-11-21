@@ -17,6 +17,12 @@ Each pull request shows the merged changes, and each commit link opens the imple
 | Luluwah Abdullah Alyousif | Session completion and feedback | [#35](https://github.com/72ws4c8ngk-beep/Jeel-Mobile-App/pull/35) | [b597001](https://github.com/72ws4c8ngk-beep/Jeel-Mobile-App/commit/b597001) |
 | Luluwah Abdullah Alyousif | Shared profiles and in-app notifications | [#36](https://github.com/72ws4c8ngk-beep/Jeel-Mobile-App/pull/36) | [04ed995](https://github.com/72ws4c8ngk-beep/Jeel-Mobile-App/commit/04ed995) |
 
+## Milestone 2 UI Snapshot
+
+The team used Figma and Gemini to create the 26 JEEL screen designs and Jetpack Compose layouts. This snapshot includes the initial UI and visual state previews.
+
+[View the `milestone-2` release](https://github.com/72ws4c8ngk-beep/Jeel-Mobile-App/releases/tag/milestone-2) · [View commit `4522535`](https://github.com/72ws4c8ngk-beep/Jeel-Mobile-App/commit/45225351f65f5cf7104360f5d7cf90f13a64344c)
+
 ## About the Project
 
 Jeel is an Android mobile application designed to connect students and young professionals with experienced and retired professionals to support knowledge sharing, mentorship, and career development.
