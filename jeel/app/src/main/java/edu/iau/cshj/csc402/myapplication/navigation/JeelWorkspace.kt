@@ -384,7 +384,7 @@ fun JeelWorkspace(
                             when (route) {
                                 "home" ->
                                     if (isMentor) MentorHomeScreen(state)
-                                    else MenteeHomeScreen(state)
+                                    else MenteeHomeScreen(state, repository, currentMenteeId)
 
                                 "explore" -> ExploreScreen(state)
                                 "filters" -> FilterScreen(state)
