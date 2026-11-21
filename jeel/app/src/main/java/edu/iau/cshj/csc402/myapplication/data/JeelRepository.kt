@@ -66,6 +66,21 @@ class JeelRepository(private val dao: JeelDao) {
     suspend fun getUserByEmail(email: String): UserEntity? = dao.getUserByEmail(email)
     suspend fun updateUser(user: UserEntity) = dao.updateUser(user)
 
+    suspend fun changePassword(userId: Int, currentPassword: String, newPassword: String): Boolean {
+        if (currentPassword.isEmpty() || newPassword.length < 8 || newPassword == currentPassword) return false
+        val user = dao.getUserById(userId) ?: return false
+        if (user.passwordHash.isBlank() || user.passwordSalt.isBlank()) return false
+
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            if (!PasswordHasher.verifyPassword(currentPassword, user.passwordSalt, user.passwordHash)) {
+                return@withContext false
+            }
+            val newSalt = PasswordHasher.generateSalt()
+            val newHash = PasswordHasher.hashPassword(newPassword, newSalt)
+            dao.replacePassword(userId, user.passwordHash, user.passwordSalt, newHash, newSalt) == 1
+        }
+    }
+
     suspend fun resetPassword(email: String, newPassword: String): Boolean {
         val cleanEmail = email.trim().lowercase()
 
