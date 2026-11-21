@@ -17,13 +17,16 @@ internal class AuthUiState {
         notice=""
         screen=next
     }
-    fun back(){
-        go(when(screen){
-            "login","signup"->"welcome"
-            "profile"->"signup"
-            "reset"->"login"
-            else->"welcome"
-        })
+    fun back() {
+        go(
+            when (screen) {
+                "login", "signup" -> "welcome"
+                "profile" -> "signup"
+                "reset" -> "login"
+                "newPassword" -> "reset"
+                else -> "welcome"
+            }
+        )
     }
     companion object {
         @Suppress("UNCHECKED_CAST")

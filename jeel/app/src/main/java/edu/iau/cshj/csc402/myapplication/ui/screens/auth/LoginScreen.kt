@@ -39,6 +39,14 @@ internal fun ColumnScope.LoginScreen(
 
         Header("WELCOME BACK", "Login", ::back)
 
+        if (state.notice.isNotBlank()) {
+            Text(
+                text = state.notice,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
         Spacer(Modifier.height(36.dp))
 
         Brand()
@@ -147,7 +155,9 @@ internal fun ColumnScope.LoginScreen(
                                     }
                                 }
 
+                                notice = ""
                                 onSuccess()
+
                             } else {
                                 errorMessage =
                                     "Incorrect password. Please try again."

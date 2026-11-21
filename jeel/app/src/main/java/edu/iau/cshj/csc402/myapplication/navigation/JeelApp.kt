@@ -15,6 +15,7 @@ import edu.iau.cshj.csc402.myapplication.data.local.MentorEntity
 import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
 import edu.iau.cshj.csc402.myapplication.state.*
+import edu.iau.cshj.csc402.myapplication.ui.screens.auth.*
 
 import edu.iau.cshj.csc402.myapplication.ui.screens.mentee.*
 import edu.iau.cshj.csc402.myapplication.ui.screens.mentor.*
@@ -198,7 +199,23 @@ fun JeelApp() {
                                         }
                                     )
 
-                                    "reset" -> ForgotPasswordScreen(state)
+                                    "reset" -> ForgotPasswordScreen(
+                                        state = state,
+                                        repository = repository,
+                                        onContinue = {
+                                            go("newPassword")
+                                        }
+                                    )
+
+                                    "newPassword" -> ResetPasswordScreen(
+                                        state = state,
+                                        repository = repository
+                                    )
+
+                                    "newPassword" -> ResetPasswordScreen(
+                                        state = state,
+                                        repository = repository
+                                    )
                                 }
                             }
 

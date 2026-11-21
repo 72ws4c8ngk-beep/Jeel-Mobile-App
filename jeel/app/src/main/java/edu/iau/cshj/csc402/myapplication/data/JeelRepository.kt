@@ -11,6 +11,7 @@ import edu.iau.cshj.csc402.myapplication.data.local.UserEntity
 import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
 import edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity
 import kotlinx.coroutines.flow.Flow
+import edu.iau.cshj.csc402.myapplication.data.security.PasswordHasher
 
 /** Local persistence boundary. Suspend operations must be called from a coroutine. */
 class JeelRepository(private val dao: JeelDao) {
@@ -64,6 +65,34 @@ class JeelRepository(private val dao: JeelDao) {
     suspend fun getUserById(userId: Int): UserEntity? = dao.getUserById(userId)
     suspend fun getUserByEmail(email: String): UserEntity? = dao.getUserByEmail(email)
     suspend fun updateUser(user: UserEntity) = dao.updateUser(user)
+
+    suspend fun resetPassword(email: String, newPassword: String): Boolean {
+        val cleanEmail = email.trim().lowercase()
+
+        if (!android.util.Patterns.EMAIL_ADDRESS
+                .matcher(cleanEmail).matches()
+        ) {
+            return false
+        }
+
+        if (newPassword.length < 8) {
+            return false
+        }
+
+        val user = dao.getUserByEmail(cleanEmail) ?: return false
+
+        val newSalt = PasswordHasher.generateSalt()
+        val newHash = PasswordHasher.hashPassword(newPassword, newSalt)
+
+        dao.updateUser(
+            user.copy(
+                passwordSalt = newSalt,
+                passwordHash = newHash
+            )
+        )
+
+        return true
+    }
 
     suspend fun insertMentor(mentor: MentorEntity): Long = dao.insertMentor(mentor)
     fun getAllMentors(): Flow<List<MentorEntity>> = dao.getAllMentors()
