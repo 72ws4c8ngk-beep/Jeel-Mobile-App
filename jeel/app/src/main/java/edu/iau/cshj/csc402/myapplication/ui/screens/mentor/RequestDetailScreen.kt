@@ -12,6 +12,7 @@ import edu.iau.cshj.csc402.myapplication.data.*
 import edu.iau.cshj.csc402.myapplication.ui.components.*
 import edu.iau.cshj.csc402.myapplication.ui.theme.*
 import edu.iau.cshj.csc402.myapplication.state.*
+import androidx.compose.material3.OutlinedTextField
 
 @Composable
 internal fun ColumnScope.RequestDetailScreen(state:JeelUiState) {
@@ -34,6 +35,9 @@ internal fun ColumnScope.RequestDetailScreen(state:JeelUiState) {
             return@with
         }
         val rawNotes = selectedSession.notes
+        LaunchedEffect(selectedSession.sessionId) {
+            zoomMeetingLink = selectedSession.zoomMeetingLink
+        }
         val bookingDetails = try {
             JSONObject(rawNotes)
         } catch (_: JSONException) {
@@ -81,6 +85,20 @@ internal fun ColumnScope.RequestDetailScreen(state:JeelUiState) {
         if (bookingNote.isNotEmpty()) {
             Heading("Booking notes", 18)
             Panel { BodyText(bookingNote) }
+        }
+        if (selectedSession.status == "Pending") {
+            Heading("Zoom Meeting Link", 18)
+
+            OutlinedTextField(
+                value = zoomMeetingLink,
+                onValueChange = { zoomMeetingLink = it },
+                label = { androidx.compose.material3.Text("Paste Zoom meeting link") },
+                placeholder = {
+                    androidx.compose.material3.Text("https://zoom.us/j/...")
+                },
+                singleLine = true,
+                modifier = androidx.compose.ui.Modifier.fillMaxWidth()
+            )
         }
         if (selectedSession?.status == "Pending") {
             Action("✓ Accept request"){

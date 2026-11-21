@@ -39,5 +39,6 @@ data class SessionEntity(
     val status: String = "Pending",
     val notes: String = "",
     val rating: Int? = null,
-    val feedback: String = ""
+    val feedback: String = "",
+    val zoomMeetingLink: String = ""
 )

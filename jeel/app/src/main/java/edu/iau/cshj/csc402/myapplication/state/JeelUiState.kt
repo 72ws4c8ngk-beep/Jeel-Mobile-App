@@ -159,6 +159,7 @@ initialProfile:Map<String,String> = emptyMap()
     var photoOptions by mutableStateOf(false)
     var notice by mutableStateOf("")
     var confirmation by mutableStateOf("")
+    var zoomMeetingLink by mutableStateOf("")
     val selectedMentor: Mentor
         get() = selectedRoomMentorId
             ?.let { id ->

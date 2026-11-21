@@ -20,11 +20,15 @@ import edu.iau.cshj.csc402.myapplication.ui.components.Panel
 import edu.iau.cshj.csc402.myapplication.ui.components.Person
 import edu.iau.cshj.csc402.myapplication.ui.components.SessionDetails
 import edu.iau.cshj.csc402.myapplication.ui.components.ToggleRow
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 
 
 import edu.iau.cshj.csc402.myapplication.R
 @Composable
 internal fun ColumnScope.SessionDetailsScreen(state: JeelUiState) {
+    val context = LocalContext.current
     with(state) {
         val preview=LocalUiScene.current.state
         val booking = selectedSession
@@ -35,16 +39,24 @@ internal fun ColumnScope.SessionDetailsScreen(state: JeelUiState) {
             else -> "Upcoming"
         }
         val person=if(isMentor) sessionPerson.ifBlank { "Aisha Rahman" } else sessionPerson.ifBlank { selectedMentor.name }
-        val zoomReady=preview=="Zoom link available"
+        val zoomMeetingLink = booking?.zoomMeetingLink?.trim().orEmpty()
+        val zoomReady = zoomMeetingLink.isNotEmpty()
         PageHead("SESSIONS · "+status.uppercase(),if(isMentor) "Guide the next step" else "Your session",::back)
         Panel {
             Person(person,if(isMentor) "Final-year Computer Science student" else selectedMentor.job,if(isMentor) R.drawable.jeel_aisha else selectedMentor.image)
             Badge(status)
             SessionDetails(sessionDate,sessionTime,currentSession)
             Detail("▣","Meeting platform","Zoom")
-            if(zoomReady) {
-                Detail("↗","Zoom link","zoom.us/j/••••••••••")
-                Action("Join Zoom meeting") { }
+            if (zoomReady) {
+                Detail("↗️", "Zoom link", zoomMeetingLink)
+
+                Action("Join Zoom meeting") {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(zoomMeetingLink)
+                    )
+                    context.startActivity(intent)
+                }
             } else {
                 Caption("The Zoom link will be available before your session.")
                 Action("Zoom link not available yet",enabled=false) { }

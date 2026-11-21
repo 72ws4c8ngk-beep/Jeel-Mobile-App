@@ -18,7 +18,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         GoalEntity::class,
         ActionItemEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class JeelDatabase : RoomDatabase() {
@@ -121,7 +121,13 @@ abstract class JeelDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX index_action_items_goalId ON action_items(goalId)")
             }
         }
-
+        internal val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE sessions ADD COLUMN zoomMeetingLink TEXT NOT NULL DEFAULT ''"
+                )
+            }
+        }
         fun getDatabase(context: Context): JeelDatabase {
 
             return INSTANCE ?: synchronized(this) {
@@ -137,7 +143,8 @@ abstract class JeelDatabase : RoomDatabase() {
                         MIGRATION_3_4,
                         MIGRATION_4_5,
                         MIGRATION_5_6,
-                        MIGRATION_6_7
+                        MIGRATION_6_7,
+                        MIGRATION_7_8
                     )
                     .build()
                     .also { INSTANCE = it }

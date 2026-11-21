@@ -539,7 +539,14 @@ fun JeelWorkspace(
                                                     session.status == "Pending"
                                                 ) {
                                                     repository.updateSession(
-                                                        session.copy(status = newStatus)
+                                                        session.copy(
+                                                            status = newStatus,
+                                                            zoomMeetingLink = if (newStatus == "Accepted") {
+                                                                zoomMeetingLink.trim()
+                                                            } else {
+                                                                session.zoomMeetingLink
+                                                            }
+                                                        )
                                                     )
                                                 }
                                             }
