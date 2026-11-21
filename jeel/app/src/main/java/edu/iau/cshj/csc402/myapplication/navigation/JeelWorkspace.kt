@@ -454,7 +454,14 @@ fun JeelWorkspace(
                                     else MenteeEditProfileScreen(state)
 
                                 "notifications" -> NotificationsScreen(state)
-                                "settings" -> SettingsScreen(state)
+                                "settings" -> SettingsScreen(
+                                    state = state,
+                                    onChangePassword = { current, replacement ->
+                                        currentUserId?.let { repository.changePassword(it, current, replacement) } == true
+                                    }
+                                )
+
+                                "privacy" -> PrivacyScreen(state::back)
                             }
                         }
 

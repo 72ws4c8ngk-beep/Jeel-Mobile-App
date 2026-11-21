@@ -77,6 +77,18 @@ interface JeelDao {
     @Update
     suspend fun updateUser(user: UserEntity)
 
+    @Query("""
+        UPDATE users SET passwordHash = :newHash, passwordSalt = :newSalt
+        WHERE userId = :userId AND passwordHash = :oldHash AND passwordSalt = :oldSalt
+    """)
+    suspend fun replacePassword(
+        userId: Int,
+        oldHash: String,
+        oldSalt: String,
+        newHash: String,
+        newSalt: String
+    ): Int
+
 
     // MENTORS
 
