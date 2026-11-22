@@ -27,7 +27,28 @@ internal fun ColumnScope.MentorDetailScreen(state:JeelUiState) {
         ProfileHero(selectedMentor.name,selectedMentor.job,selectedMentor.image,"Verified mentor")
         Chips(listOf(selectedMentor.area,"${selectedMentor.years} years of experience"),""){
         }
-        Stats(listOf((if(LocalUiScene.current.state=="No reviews") "—" else selectedMentor.rating) to (if(LocalUiScene.current.state=="No reviews") "No reviews yet" else "64 reviews"),"112" to "Sessions guided",selectedMentor.years.toString() to "Years of experience"))
+        val mentorReviews = selectedMentorSessions.filter { it.rating != null }
+
+        val averageRating = if (mentorReviews.isEmpty()) {
+            "—"
+        } else {
+            String.format(
+                Locale.US,
+                "%.1f",
+                mentorReviews.mapNotNull { it.rating }.average()
+            )
+        }
+
+        Stats(
+            listOf(
+                "$averageRating ★" to "${mentorReviews.size} reviews",
+
+                selectedMentorSessions.count { it.status == "Completed" }
+                    .toString() to "Sessions guided",
+
+                selectedMentor.years.toString() to "Years of experience"
+            )
+        )
         Heading("About ${selectedMentor.name.removePrefix("Dr. ").substringBefore(' ')}",18)
         BodyText(if(mentorIndex==0)Bio else "I help emerging professionals build confidence, explore their strengths, and turn their ambitions into a practical career plan.")
         BodyText("Expect honest conversations, practical frameworks, and a clear next step after every session.")
@@ -39,8 +60,24 @@ internal fun ColumnScope.MentorDetailScreen(state:JeelUiState) {
             Detail("◎","Career direction","From your current interests to your next career step")
             Detail("▣","Professional growth","CV reviews, interviews and leadership")
         }
-        Heading("What mentees say · 64 reviews",18)
-        if(LocalUiScene.current.state=="No reviews") Info("No reviews yet","Be the first to share your experience after a session.") else ReviewCard()
+        Heading("Reviews", 18)
+
+        if (mentorReviews.isEmpty()) {
+            Info(
+                "No reviews yet",
+                "Reviews will appear here after mentees rate completed sessions."
+            )
+        } else {
+            mentorReviews.forEach { review ->
+                Panel {
+                    BodyText("${review.rating} out of 5 stars")
+
+                    if (review.feedback.isNotBlank()) {
+                        BodyText(review.feedback)
+                    }
+                }
+            }
+        }
         val days = bookingAvailabilitySlots
             .filter { it.mentorId == selectedRoomMentorId }
             .map { it.dayOfWeek }

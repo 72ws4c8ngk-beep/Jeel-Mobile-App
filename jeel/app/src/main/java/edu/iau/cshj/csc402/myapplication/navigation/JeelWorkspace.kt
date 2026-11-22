@@ -21,6 +21,7 @@ import edu.iau.cshj.csc402.myapplication.ui.screens.mentor.*
 import edu.iau.cshj.csc402.myapplication.ui.screens.shared.*
 import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 import edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity
 import edu.iau.cshj.csc402.myapplication.data.local.SessionEntity
 private fun timeToMinutes(time: String): Int? {
@@ -265,6 +266,34 @@ fun JeelWorkspace(
         } else {
             repository.getAvailabilityByMentor(mentorId).collect { slots ->
                 state.bookingAvailabilitySlots = slots
+            }
+        }
+    }
+    LaunchedEffect(state.selectedRoomMentorId) {
+        val mentorId = state.selectedRoomMentorId
+
+        if (mentorId == null) {
+            state.selectedMentorSessions = emptyList()
+        } else {
+            repository.getSessionsByMentor(mentorId).collect { sessions ->
+                state.selectedMentorSessions = sessions
+            }
+        }
+    }
+    LaunchedEffect(state.mentorProfiles) {
+        val profiles = state.mentorProfiles
+
+        if (profiles.isEmpty()) {
+            state.allMentorAvailabilitySlots = emptyList()
+        } else {
+            val availabilityFlows = profiles.map { mentor ->
+                repository.getAvailabilityByMentor(mentor.mentorId)
+            }
+
+            combine(availabilityFlows) { slotsByMentor ->
+                slotsByMentor.flatMap { it }
+            }.collect { slots ->
+                state.allMentorAvailabilitySlots = slots
             }
         }
     }

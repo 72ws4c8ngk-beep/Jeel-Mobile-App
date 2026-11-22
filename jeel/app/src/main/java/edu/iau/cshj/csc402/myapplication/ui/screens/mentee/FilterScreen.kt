@@ -27,8 +27,13 @@ internal fun ColumnScope.FilterScreen(state:JeelUiState) {
             filterSkills=it
         }
         Heading("Availability", 18)
-        BodyText("Availability filters will be enabled when mentor schedules are connected.")
 
+        Chips(
+            values = listOf("Any time", "Has schedule"),
+            selected = filterAvailability
+        ) {
+            filterAvailability = it
+        }
         Heading("Minimum rating",18)
         Chips(listOf("Any","4.0+","4.5+","4.8+"),filterRating){
             filterRating=it
