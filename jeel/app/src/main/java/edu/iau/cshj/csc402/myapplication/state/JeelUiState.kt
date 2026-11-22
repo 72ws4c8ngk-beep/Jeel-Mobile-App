@@ -35,6 +35,7 @@ initialProfile:Map<String,String> = emptyMap()
 
     var menteeSessions by mutableStateOf<List<SessionEntity>>(emptyList())
     var mentorSessions by mutableStateOf<List<SessionEntity>>(emptyList())
+    var selectedMentorSessions by mutableStateOf<List<SessionEntity>>(emptyList())
     var selectedRequestId by mutableIntStateOf(0)
     var menteeNames by mutableStateOf<Map<Int, String>>(emptyMap())
 
@@ -117,6 +118,9 @@ initialProfile:Map<String,String> = emptyMap()
     var mentorProfiles by mutableStateOf<List<MentorProfile>>(emptyList())
     var selectedRoomMentorId by mutableStateOf<Int?>(null)
     var bookingAvailabilitySlots by mutableStateOf(
+        emptyList<edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity>()
+    )
+    var allMentorAvailabilitySlots by mutableStateOf(
         emptyList<edu.iau.cshj.csc402.myapplication.data.local.AvailabilityEntity>()
     )
     var date by mutableIntStateOf(18)
@@ -279,7 +283,18 @@ initialProfile:Map<String,String> = emptyMap()
                 filterIndustry == "All industries" ||
                         mentorIndustry.equals(filterIndustry, ignoreCase = true)
 
-            matchesSearch && matchesArea && matchesRating && matchesSkills && matchesIndustry
+            val matchesAvailability =
+                filterAvailability == "Any time" ||
+                        allMentorAvailabilitySlots.any { slot ->
+                            slot.mentorId == mentor.mentorId
+                        }
+
+            matchesSearch &&
+                    matchesArea &&
+                    matchesRating &&
+                    matchesSkills &&
+                    matchesIndustry &&
+                    matchesAvailability
         }
     }
 }
