@@ -9,6 +9,10 @@ import edu.iau.cshj.csc402.myapplication.ui.theme.*
 import edu.iau.cshj.csc402.myapplication.data.local.MentorProfile
 import org.json.JSONObject
 import edu.iau.cshj.csc402.myapplication.data.local.SessionEntity
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
+import java.text.SimpleDateFormat
 
 @Stable
 internal class JeelUiState(
@@ -230,15 +234,107 @@ initialProfile:Map<String,String> = emptyMap()
         go("session")
     }
     fun filtered():List<IndexedValue<Mentor>> = mentors.withIndex().toList()
+    val hasActiveMentorFilters: Boolean
+        get() = filterArea != "All expertise" ||
+                filterIndustry != "All industries" ||
+                filterSkills != "Any" ||
+                filterAvailability != "Any time" ||
+                filterRating != "Any"
+
+    fun resetMentorFilters() {
+        filterArea = "All expertise"
+        filterIndustry = "All industries"
+        filterSkills = "Any"
+        filterAvailability = "Any time"
+        filterRating = "Any"
+        query = ""
+    }
+
+    private fun matchingAvailabilityMentorIds(): Set<Int> {
+        val zone = TimeZone.getTimeZone("Asia/Riyadh")
+        val now = Calendar.getInstance(zone, Locale.US)
+
+        val daysUntilSunday =
+            (Calendar.SUNDAY - now.get(Calendar.DAY_OF_WEEK) + 7) % 7
+
+        val offsets = when (filterAvailability) {
+            "This week" -> 0..daysUntilSunday
+            "Next week" ->
+                (daysUntilSunday + 1)..(daysUntilSunday + 7)
+            "Weekends" -> 0..7
+            else -> return emptySet()
+        }
+
+        val dayFormat = SimpleDateFormat("EEE", Locale.US).apply {
+            timeZone = zone
+        }
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+            timeZone = zone
+        }
+
+        val dateTimeFormat =
+            SimpleDateFormat("yyyy-MM-dd h:mm a", Locale.US).apply {
+                timeZone = zone
+                isLenient = false
+            }
+
+        val matchingIds = mutableSetOf<Int>()
+
+        for (offset in offsets) {
+            val day = (now.clone() as Calendar).apply {
+                add(Calendar.DAY_OF_YEAR, offset)
+            }
+
+            val weekday = dayFormat.format(day.time)
+
+            if (filterAvailability == "Weekends" &&
+                weekday !in listOf("Fri", "Sat")
+            ) {
+                continue
+            }
+
+            allMentorAvailabilitySlots
+                .filter { it.dayOfWeek == weekday }
+                .forEach { slot ->
+                    val slotDateTime = runCatching {
+                        dateTimeFormat.parse(
+                            "${dateFormat.format(day.time)} ${slot.startTime.trim()}"
+                        )
+                    }.getOrNull()
+
+                    if (slotDateTime != null &&
+                        slotDateTime.after(now.time)
+                    ) {
+                        matchingIds.add(slot.mentorId)
+                    }
+                }
+        }
+
+        return matchingIds
+    }
+
     fun filteredRoomMentors(): List<MentorProfile> {
         val searchText = query.trim()
 
+        val availableMentorIds =
+            if (filterAvailability == "Any time") {
+                emptySet()
+            } else {
+                matchingAvailabilityMentorIds()
+            }
+
         return mentorProfiles.filter { mentor ->
+
+            val mentorSkills = runCatching {
+                JSONObject(mentor.profileData).optString("skills", "")
+            }.getOrDefault("")
 
             val matchesSearch =
                 searchText.isEmpty() ||
                         mentor.fullName.contains(searchText, ignoreCase = true) ||
-                        mentor.specialization.contains(searchText, ignoreCase = true)
+                        mentor.specialization.contains(searchText, ignoreCase = true) ||
+                        mentorSkills.contains(searchText, ignoreCase = true)
 
             val matchesArea = when (filterArea) {
                 "All expertise" -> true
@@ -267,10 +363,6 @@ initialProfile:Map<String,String> = emptyMap()
                 else -> true
             }
 
-            val mentorSkills = runCatching {
-                JSONObject(mentor.profileData).optString("skills", "")
-            }.getOrDefault("")
-
             val matchesSkills =
                 filterSkills == "Any" ||
                         mentorSkills.contains(filterSkills, ignoreCase = true)
@@ -285,9 +377,7 @@ initialProfile:Map<String,String> = emptyMap()
 
             val matchesAvailability =
                 filterAvailability == "Any time" ||
-                        allMentorAvailabilitySlots.any { slot ->
-                            slot.mentorId == mentor.mentorId
-                        }
+                        mentor.mentorId in availableMentorIds
 
             matchesSearch &&
                     matchesArea &&
